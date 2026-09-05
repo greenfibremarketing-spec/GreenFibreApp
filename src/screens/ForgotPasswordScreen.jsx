@@ -34,9 +34,9 @@ const { width, height } = Dimensions.get("window");
 
 // FNP Brand Colors
 const fnpColors = {
-  primary: "#E91E63",
-  primaryLight: "#FCE4EC",
-  primaryDark: "#C2185B",
+  primary: "#2E7D32",
+  primaryLight: "#E8F5E9",
+  primaryDark: "#1B5E20",
   gold: "#FFD700",
   goldLight: "#FFF8E1",
   white: "#FFFFFF",
@@ -297,7 +297,7 @@ export function ForgotPasswordScreen({ navigation }) {
     >
       <View style={styles.iconWrapper}>
         <LinearGradient
-          colors={["#FCE4EC", "#F8BBD0"]}
+          colors={["#E8F5E9", "#C8E6C9"]}
           style={styles.iconGradient}
         >
           <Ionicons

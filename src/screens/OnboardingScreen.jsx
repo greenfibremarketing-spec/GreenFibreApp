@@ -29,22 +29,22 @@ import { setHasSeenOnboarding } from "../store/slices/uiSlice";
 import { useState, useRef } from "react";
 const { width, height } = Dimensions.get("window");
 
-// FNP Brand Colors
+// Premium Green Fibre Brand Colors
 const fnpColors = {
-  primary: "#E91E63",
-  primaryLight: "#FCE4EC",
-  primaryDark: "#C2185B",
-  gold: "#FFD700",
-  goldLight: "#FFF8E1",
+  primary: "#2E7D32",
+  primaryLight: "#E8F5E9",
+  primaryDark: "#1B5E20",
+  gold: "#D4A843",
+  goldLight: "#FBF5E6",
   white: "#FFFFFF",
-  text: "#1A1A1A",
-  textSecondary: "#666666",
-  textMuted: "#999999",
-  borderLight: "#E8E8E8",
-  success: "#4CAF50",
-  danger: "#F44336",
-  warning: "#FF9800",
-  cream: "#FFF8F0",
+  text: "#2C2C2C",
+  textSecondary: "#6B6B6B",
+  textMuted: "#9E9E9E",
+  borderLight: "#E8E3DA",
+  success: "#388E3C",
+  danger: "#C62828",
+  warning: "#E6A817",
+  cream: "#FAF7F2",
 };
 
 // Image mapping
@@ -169,7 +169,7 @@ export function OnboardingScreen({ navigation }) {
       <View style={styles.textContent}>
         <View style={styles.iconContainer}>
           <LinearGradient
-            colors={[fnpColors.primaryLight, "#F8BBD0"]}
+            colors={[fnpColors.primaryLight, "#C8E6C9"]}
             style={styles.iconGradient}
           >
             <Ionicons
@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
 // // FNP Brand Colors
 // const fnpColors = {
 //   primary: "#E91E63",
-//   primaryLight: "#FCE4EC",
+//   primaryLight: "#E8F5E9",
 //   primaryDark: "#C2185B",
 //   gold: "#FFD700",
 //   goldLight: "#FFF8E1",
@@ -806,7 +806,7 @@ const styles = StyleSheet.create({
 //         >
 //           <View style={styles.iconContainer}>
 //             <LinearGradient
-//               colors={[fnpColors.primaryLight, "#F8BBD0"]}
+//               colors={[fnpColors.primaryLight, "#C8E6C9"]}
 //               style={styles.iconGradient}
 //             >
 //               <Ionicons

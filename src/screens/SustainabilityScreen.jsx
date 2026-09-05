@@ -26,9 +26,9 @@ const { width } = Dimensions.get("window");
 
 // FNP Brand Colors
 const fnpColors = {
-  primary: "#E91E63",
-  primaryLight: "#FCE4EC",
-  primaryDark: "#C2185B",
+  primary: "#2E7D32",
+  primaryLight: "#E8F5E9",
+  primaryDark: "#1B5E20",
   gold: "#FFD700",
   goldLight: "#FFF8E1",
   white: "#FFFFFF",
@@ -242,7 +242,7 @@ export function SustainabilityScreen() {
             >
               <View style={styles.initiativeIcon}>
                 <LinearGradient
-                  colors={[fnpColors.primaryLight, "#F8BBD0"]}
+                  colors={[fnpColors.primaryLight, "#C8E6C9"]}
                   style={styles.initiativeIconGradient}
                 >
                   <Ionicons name="leaf" size={22} color={fnpColors.primary} />
@@ -314,7 +314,7 @@ export function SustainabilityScreen() {
           {certifications.map((cert, i) => (
             <Animated.View key={i} style={styles.certBadge}>
               <LinearGradient
-                colors={[fnpColors.primaryLight, "#F8BBD0"]}
+                colors={[fnpColors.primaryLight, "#C8E6C9"]}
                 style={styles.certIconWrap}
               >
                 <Ionicons
@@ -658,7 +658,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md || 12,
     borderRadius: spacing.pillRadius || 25,
     borderWidth: 1,
-    borderColor: "#F8BBD0",
+    borderColor: "#C8E6C9",
   },
   certIconWrap: {
     width: 28,

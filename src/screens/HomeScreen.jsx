@@ -701,9 +701,9 @@ export default function HomeScreen() {
 
   return (
     <ScreenContainer onMenuPress={() => navigation.openDrawer()}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content" backgroundColor="#FAF7F2" />
       <SafeAreaView
-        style={{ flex: 1, backgroundColor: "#FFFFFF" }}
+        style={{ flex: 1, backgroundColor: "#FAF7F2" }}
         edges={["top"]}
       >
         <Animated.ScrollView
@@ -942,7 +942,7 @@ export default function HomeScreen() {
                 <View style={styles.loyaltyContent}>
                   <View style={styles.loyaltyLeft}>
                     <View style={styles.loyaltyHeader}>
-                      <Text style={styles.loyaltyTitle}>🌟 Brownie Points</Text>
+                      <Text style={styles.loyaltyTitle}>🌟 Reward Points</Text>
                       <View style={styles.loyaltyTierBadge}>
                         <Text style={styles.loyaltyTierText}>
                           {loyaltyData.tier}
@@ -1572,7 +1572,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FAF7F2",
   },
   contentContainer: {
     paddingBottom: 20,
@@ -1586,13 +1586,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FAF7F2",
   },
   iconBtn: {
     width: moderateScale(40),
     height: moderateScale(40),
     borderRadius: moderateScale(20),
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "#F0EBE3",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1627,11 +1627,11 @@ const styles = StyleSheet.create({
   greetingText: {
     fontSize: moderateScale(16),
     fontWeight: "900",
-    color: "#1A1A1A",
+    color: "#2C2C2C",
   },
   greetingSub: {
     fontSize: moderateScale(11),
-    color: "#888",
+    color: "#8B8B8B",
     fontWeight: "500",
   },
 

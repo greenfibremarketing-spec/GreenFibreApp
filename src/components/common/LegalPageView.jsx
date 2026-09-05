@@ -18,9 +18,9 @@ import { colors, spacing, typography, shadows } from "../../theme";
 
 // FNP Brand Colors
 const fnpColors = {
-  primary: "#E91E63",
-  primaryLight: "#FCE4EC",
-  primaryDark: "#C2185B",
+  primary: "#2E7D32",
+  primaryLight: "#E8F5E9",
+  primaryDark: "#1B5E20",
   gold: "#FFD700",
   goldLight: "#FFF8E1",
   white: "#FFFFFF",
@@ -86,7 +86,7 @@ const SectionItem = ({ section, index }) => {
         <View style={styles.sectionHeaderLeft}>
           <View style={styles.sectionIconWrap}>
             <LinearGradient
-              colors={[fnpColors.primaryLight, "#F8BBD0"]}
+              colors={[fnpColors.primaryLight, "#C8E6C9"]}
               style={styles.sectionIconGradient}
             >
               <Text style={styles.sectionIconNumber}>{index + 1}</Text>
@@ -301,7 +301,7 @@ export function LegalPageView({ page, navigation }) {
         {/* Last Updated */}
         <View style={styles.lastUpdatedContainer}>
           <LinearGradient
-            colors={[fnpColors.primaryLight, "#F8BBD0"]}
+            colors={[fnpColors.primaryLight, "#C8E6C9"]}
             style={styles.lastUpdatedGradient}
           >
             <Ionicons name="time-outline" size={16} color={fnpColors.primary} />

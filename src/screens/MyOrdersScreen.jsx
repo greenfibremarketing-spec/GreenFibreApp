@@ -30,9 +30,9 @@ const { width } = Dimensions.get("window");
 
 // FNP-Inspired Color Palette
 const FNP_COLORS = {
-  primary: "#E91E63",
-  primaryLight: "#FCE4EC",
-  primaryDark: "#C2185B",
+  primary: "#2E7D32",
+  primaryLight: "#E8F5E9",
+  primaryDark: "#1B5E20",
   accent: "#FFD700",
   gold: "#F57F17",
   surface: "#FFFFFF",
@@ -279,7 +279,7 @@ const EmptyOrdersState = ({ navigation }) => {
     <View style={styles.emptyContainer}>
       <View style={styles.emptyIconWrap}>
         <LinearGradient
-          colors={["#FCE4EC", "#F8BBD0"]}
+          colors={["#E8F5E9", "#C8E6C9"]}
           style={styles.emptyGradient}
         >
           <Ionicons

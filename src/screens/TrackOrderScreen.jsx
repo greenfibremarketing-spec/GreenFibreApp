@@ -25,8 +25,8 @@ import {
 } from "../store/slices/ordersSlice";
 
 const fnpColors = {
-  primary: "#E91E63",
-  primaryLight: "#FCE4EC",
+  primary: "#2E7D32",
+  primaryLight: "#E8F5E9",
   white: "#FFFFFF",
   text: "#1A1A1A",
   textMuted: "#999999",

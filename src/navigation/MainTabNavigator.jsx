@@ -24,18 +24,19 @@ import { selectCartBadgeCount } from "../store/slices/cartSlice";
 
 const Tab = createBottomTabNavigator();
 
-// Enhanced FNP-style colors
+// Premium Green Fibre tab colors
 const fnpColors = {
-  primary: "#E91E63",
-  primaryLight: "#FCE4EC",
-  primaryDark: "#C2185B",
-  gold: "#FFD700",
+  primary: "#2E7D32",
+  primaryLight: "#E8F5E9",
+  primaryDark: "#1B5E20",
+  gold: "#D4A843",
   white: "#FFFFFF",
-  borderLight: "#E8E8E8",
-  shadow: "#00000020",
-  textLight: "#999999",
-  text: "#1A1A1A",
-  green: "#4CAF50",
+  cream: "#FDFBF7",
+  borderLight: "#E8E3DA",
+  shadow: "rgba(43, 30, 10, 0.06)",
+  textLight: "#9E9E9E",
+  text: "#2C2C2C",
+  green: "#388E3C",
 };
 
 // Custom Tab Bar Button Component with Badge
@@ -165,18 +166,18 @@ export function MainTabNavigator() {
         tabBarActiveTintColor: fnpColors.primary,
         tabBarInactiveTintColor: fnpColors.textLight,
         tabBarStyle: {
-          backgroundColor: fnpColors.white,
+          backgroundColor: fnpColors.cream,
           borderTopColor: fnpColors.borderLight,
           height: Platform.OS === "ios" ? 85 : 75,
           paddingBottom: Platform.OS === "ios" ? 20 : 10,
           paddingTop: 8,
           elevation: 12,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: -6 },
+          shadowColor: "rgba(43, 30, 10, 0.15)",
+          shadowOffset: { width: 0, height: -4 },
           shadowOpacity: 0.08,
-          shadowRadius: 12,
+          shadowRadius: 16,
           borderTopWidth: 1,
-          borderTopColor: "#F0F0F0",
+          borderTopColor: fnpColors.borderLight,
         },
         tabBarLabelStyle: {
           ...typography.bodySmall,

@@ -1,66 +1,51 @@
-// export const colors = {
-//     primary: '#16a34a',
-//     primaryDark: '#15803d',
-//     primaryLight: '#22c55e',
-//     primaryMuted: '#dcfce7',
-//     primarySurface: '#f0fdf4',
-//     white: '#ffffff',
-//     cream: '#faf8f5',
-//     creamDark: '#f5f0e8',
-//     earth: '#8b7355',
-//     earthLight: '#c4a882',
-//     earthDark: '#5c4a32',
-//     text: '#111827',
-//     textSecondary: '#4b5563',
-//     textMuted: '#6b7280',
-//     textLight: '#9ca3af',
-//     border: '#e5e7eb',
-//     borderLight: '#f3f4f6',
-//     error: '#dc2626',
-//     errorLight: '#fef2f2',
-//     warning: '#d97706',
-//     success: '#16a34a',
-//     shadow: 'rgba(21, 128, 61, 0.12)',
-//     overlay: 'rgba(0, 0, 0, 0.45)',
-// };
-
 // src/theme/colors.js
+// Premium Green Fibre palette — earthy luxury meets sustainable living
 
 export const colors = {
-  // Primary colors
+  // Primary greens — deep forest to bright accent
   primary: '#2E7D32',
   primaryDark: '#1B5E20',
   primaryLight: '#4CAF50',
   primaryMuted: '#E8F5E9',
-  
-  // Secondary colors
-  secondary: '#66BB6A',
-  accent: '#F4B400',
-  
-  // Background colors
-  background: '#FFFFFF',
-  backgroundSecondary: '#F8F9FA',
-  cardBackground: '#FAFAFA',
-  surface: '#F5F5F5',
-  
-  // Text colors
-  text: '#1C1C1C',
-  textPrimary: '#1C1C1C',
-  textSecondary: '#757575',
-  textLight: '#BDBDBD',
-  textMuted: '#9CA3AF',
-  
-  // Base colors
+  primarySurface: '#F0F7F1',
+
+  // Cream / warm neutrals — the signature warm base
+  cream: '#FAF7F2',
+  creamDark: '#F0EBE3',
+  creamLight: '#FDFBF7',
+  creamAccent: '#EDE8DF',
+
+  // Earth tones — for depth and organic feel
+  earth: '#8B7355',
+  earthLight: '#C4A882',
+  earthDark: '#5C4A32',
+
+  // Background hierarchy
+  background: '#FAF7F2',
+  backgroundSecondary: '#F5F0E8',
+  cardBackground: '#FFFFFF',
+  surface: '#F5F0E8',
+
+  // Text hierarchy — warm charcoal instead of cold black
+  text: '#2C2C2C',
+  textPrimary: '#2C2C2C',
+  textSecondary: '#6B6B6B',
+  textLight: '#9E9E9E',
+  textMuted: '#A3A3A3',
+
+  // Base
   white: '#FFFFFF',
   black: '#000000',
-  border: '#EEEEEE',
-  
-  // Status colors
-  success: '#43A047',
-  error: '#D32F2F',
-  warning: '#F4B400',
-  
-  // Shadow
-  shadow: 'rgba(0,0,0,0.08)',
+  border: '#E8E3DA',
+  borderLight: '#F0EBE3',
+
+  // Status colors — muted, premium tones
+  success: '#388E3C',
+  error: '#C62828',
+  warning: '#E6A817',
+
+  // Utility
+  shadow: 'rgba(43, 30, 10, 0.08)',
+  overlay: 'rgba(0, 0, 0, 0.45)',
   transparent: 'transparent',
 };

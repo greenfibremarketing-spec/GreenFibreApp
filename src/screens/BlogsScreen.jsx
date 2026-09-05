@@ -27,9 +27,9 @@ const { width } = Dimensions.get("window");
 
 // FNP Brand Colors
 const fnpColors = {
-  primary: "#E91E63",
-  primaryLight: "#FCE4EC",
-  primaryDark: "#C2185B",
+  primary: "#2E7D32",
+  primaryLight: "#E8F5E9",
+  primaryDark: "#1B5E20",
   gold: "#FFD700",
   white: "#FFFFFF",
   text: "#1A1A1A",

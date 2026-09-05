@@ -54,7 +54,7 @@ export function ScreenContainer({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.cream,
+    backgroundColor: colors.cream || '#FAF7F2',
   },
   keyboardView: {
     flex: 1,

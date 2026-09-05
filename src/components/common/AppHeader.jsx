@@ -27,7 +27,7 @@ export function AppHeader({
             onPress={onMenuPress}
             accessibilityLabel="Open menu"
           >
-            <Ionicons name="menu" size={24} color={colors.textSecondary} />
+            <Ionicons name="menu" size={22} color={colors.text} />
           </TouchableOpacity>
         )}
         <TouchableOpacity
@@ -50,9 +50,9 @@ export function AppHeader({
           accessibilityLabel="Open cart"
         >
           <Ionicons
-            name="cart-outline"
-            size={24}
-            color={colors.textSecondary}
+            name="bag-outline"
+            size={22}
+            color={colors.text}
           />
           {cartCount > 0 && (
             <View style={styles.badge}>
@@ -68,32 +68,34 @@ export function AppHeader({
 }
 const styles = StyleSheet.create({
   wrapper: {
-    backgroundColor: colors.white,
-    boxShadow: "0px 2px 4px rgba(0,0,0,0.1)",
+    backgroundColor: colors.cream,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: spacing.screen,
-    height: 60,
+    height: 52,
   },
   iconBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: spacing.buttonRadius,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: colors.creamDark,
   },
   logoWrap: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    height: 44,
+    height: 40,
   },
   logo: {
-    width: 140,
-    height: 40,
+    width: 130,
+    height: 36,
   },
   title: {
     ...typography.h3,
@@ -101,8 +103,8 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: "absolute",
-    top: 4,
-    right: 4,
+    top: 2,
+    right: 2,
     backgroundColor: colors.primary,
     borderRadius: 10,
     minWidth: 18,
@@ -110,6 +112,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 4,
+    borderWidth: 1.5,
+    borderColor: colors.cream,
   },
   badgeText: {
     color: colors.white,
