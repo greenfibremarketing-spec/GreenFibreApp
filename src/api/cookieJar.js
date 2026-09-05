@@ -18,7 +18,12 @@ export async function loadCookies() {
 
 export async function saveCookies(cookies) {
     memoryCookies = { ...memoryCookies, ...cookies };
-    await SecureStore.setItemAsync(COOKIE_STORE_KEY, JSON.stringify(memoryCookies));
+    try {
+        await SecureStore.setItemAsync(COOKIE_STORE_KEY, JSON.stringify(memoryCookies));
+    }
+    catch (e) {
+        // SecureStore may be unavailable or fail in some environments
+    }
 }
 
 export async function clearCookies() {

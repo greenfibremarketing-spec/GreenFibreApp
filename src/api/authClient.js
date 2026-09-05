@@ -3,9 +3,11 @@ import { Platform } from 'react-native';
 import {
     clearCookies,
     getCookieHeader,
+    getMemoryCookies,
     loadCookies,
     parseSetCookieHeaders,
     saveCookies,
+    TOKEN_COOKIE_NAME,
 } from './cookieJar';
 
 const DEFAULT_GREEN_FIBRE_API_URL = 'https://api.greenfibre.org/api';
@@ -38,9 +40,8 @@ async function persistResponseCookies(headers) {
 }
 
 /**
- * Dedicated Axios client for Green Fibre cookie-based authentication.
- * Uses manual Cookie header injection because React Native does not
- * reliably persist HTTP-only cookies with withCredentials alone.
+ * Dedicated Axios client for Green Fibre authentication.
+ * Uses both Cookie and Authorization Bearer headers for cross-platform reliability.
  */
 export const authApiClient = axios.create({
     baseURL: getGreenFibreApiUrl(),
@@ -57,11 +58,18 @@ authApiClient.interceptors.request.use(async (config) => {
     if (cookieHeader) {
         config.headers.Cookie = cookieHeader;
     }
+    const token = getMemoryCookies()[TOKEN_COOKIE_NAME];
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
 });
 
 authApiClient.interceptors.response.use(async (response) => {
     await persistResponseCookies(response.headers);
+    if (response.data?.token) {
+        await saveCookies({ [TOKEN_COOKIE_NAME]: response.data.token });
+    }
     return response;
 }, async (error) => {
     if (error.response?.headers) {

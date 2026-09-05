@@ -475,7 +475,11 @@ export function ProductDetailsScreen({ navigation, route }) {
                 <Ionicons name="paw-outline" size={14} color="#2E7D32" />
               </LinearGradient>
               <Text style={styles.category}>
-                {product.category || "Product"}
+                {product.categoryName ||
+                  (typeof product.category === "object"
+                    ? product.category?.name
+                    : product.category) ||
+                  "Product"}
               </Text>
             </View>
             {product.inStock !== false && (

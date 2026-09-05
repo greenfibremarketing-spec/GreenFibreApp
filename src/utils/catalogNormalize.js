@@ -109,6 +109,10 @@ export function normalizeProduct(rawProduct) {
         : product.features && typeof product.features === 'object'
             ? Object.values(product.features).filter(Boolean)
             : [];
+    const categoryName = category?.name || (typeof product.category === 'string' ? product.category : '');
+    const categorySlug = category?.slug || product.categorySlug || '';
+    const subCategoryName = subCategory?.name || (typeof product.subCategory === 'string' ? product.subCategory : '');
+    const subCategorySlug = subCategory?.slug || '';
 
     return {
         ...product,
@@ -121,12 +125,15 @@ export function normalizeProduct(rawProduct) {
         discountedPrice: product.discountedPrice,
         originalPrice: product.originalPrice,
         colors: normalizedColors,
-        category,
-        subCategory,
-        categorySlug: category?.slug || product.categorySlug || '',
-        categoryName: category?.name || (typeof product.category === 'string' ? product.category : ''),
-        subCategorySlug: subCategory?.slug || '',
-        subCategoryName: subCategory?.name || '',
+        category: categoryName,
+        categoryData: category,
+        categoryDetails: category,
+        categorySlug,
+        categoryName,
+        subCategory: subCategoryName,
+        subCategoryData: subCategory,
+        subCategorySlug,
+        subCategoryName,
         image: cardImage,
         images: galleryImages,
         rating: product.averageRating ?? product.rating ?? 0,

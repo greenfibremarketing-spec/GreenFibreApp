@@ -862,8 +862,8 @@ import {
   TouchableOpacity,
   Platform,
   Animated,
-  SafeAreaView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -1061,7 +1061,12 @@ export function GalleryScreen() {
         title: item.name || `Product ${index + 1}`,
         image: item.image || item.imageUrl || item.photo,
         price: item.price,
-        category: item.category || "Uncategorized",
+        category:
+          (typeof item.category === "object"
+            ? item.category?.name
+            : item.category) ||
+          item.categoryName ||
+          "Uncategorized",
         rating: item.rating || 4 + Math.random() * 0.9,
         isNew: Math.random() > 0.7,
       })) || [];

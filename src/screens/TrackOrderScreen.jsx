@@ -114,7 +114,7 @@ export function TrackOrderScreen({ route }) {
             >
               <View>
                 <Text style={styles.orderPickNumber}>
-                  {item.easebuzzOrderId || item._id}
+                  {item.orderNumber || item.razorpayOrderId || item.easebuzzOrderId || item._id}
                 </Text>
                 <Text style={styles.orderPickMeta}>
                   {formatStatusLabel(item.orderStatus || item.status)}
@@ -206,7 +206,7 @@ export function TrackOrderScreen({ route }) {
             <View style={styles.statusInfo}>
               <Text style={styles.statusLabel}>{formatStatusLabel(currentStatus)}</Text>
               <Text style={styles.orderNumber}>
-                {displayOrder.easebuzzOrderId || displayOrder._id}
+                {displayOrder.orderNumber || displayOrder.razorpayOrderId || displayOrder.easebuzzOrderId || displayOrder._id}
               </Text>
               <Text style={styles.paymentMeta}>
                 Payment: {displayOrder.paymentStatus || "pending"}

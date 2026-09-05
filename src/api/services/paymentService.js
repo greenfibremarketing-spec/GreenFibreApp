@@ -19,11 +19,41 @@ function createPaymentError(error) {
 }
 
 /**
- * Public endpoint — no cookie auth required.
- * Forwards the complete Easebuzz callback payload to the backend.
+ * Payment Service — supports Razorpay (primary live) and Easebuzz (legacy).
  */
 export const paymentService = {
+    async verifyRazorpayPayment(payload) {
+        try {
+            const response = await axios.post(
+                `${getGreenFibreApiUrl()}/verify-payment`,
+                payload,
+                {
+                    timeout: 20000,
+                    headers: { 'Content-Type': 'application/json' },
+                },
+            );
+
+            return {
+                success: Boolean(response.data?.success),
+                message: response.data?.message || '',
+                orderId: response.data?.orderId,
+                order: response.data?.order
+                    ? normalizeOrder(response.data.order)
+                    : null,
+                data: response.data,
+            };
+        }
+        catch (error) {
+            throw createPaymentError(error);
+        }
+    },
+
     async verifyPayment(payload) {
+        // If payload is for Razorpay, route to Razorpay verification
+        if (payload?.razorpay_order_id || payload?.razorpay_payment_id || payload?.razorpay_signature) {
+            return this.verifyRazorpayPayment(payload);
+        }
+
         try {
             const response = await axios.post(
                 `${getGreenFibreApiUrl()}/order/verify`,

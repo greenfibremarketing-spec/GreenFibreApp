@@ -152,15 +152,30 @@ export function CheckoutScreen({ navigation }) {
         }),
       ).unwrap();
 
-      if (!result.paymentData || !result.easebuzzUrl) {
-        throw new Error("Payment could not be initiated. Please try again.");
+      if (result.razorpayOrderId) {
+        navigation.navigate("RazorpayPayment", {
+          orderId: result.order?._id,
+          razorpayOrderId: result.razorpayOrderId,
+          amount: result.amount,
+          currency: result.currency || "INR",
+          keyId: result.keyId,
+          customerName: form.fullName,
+          customerEmail: form.email,
+          customerPhone: form.phone,
+        });
+        return;
       }
 
-      navigation.navigate("EasebuzzPayment", {
-        paymentData: result.paymentData,
-        easebuzzUrl: result.easebuzzUrl,
-        orderId: result.order?._id,
-      });
+      if (result.paymentData && result.easebuzzUrl) {
+        navigation.navigate("EasebuzzPayment", {
+          paymentData: result.paymentData,
+          easebuzzUrl: result.easebuzzUrl,
+          orderId: result.order?._id,
+        });
+        return;
+      }
+
+      throw new Error(result.message || "Payment could not be initiated. Please try again.");
     }
     catch (error) {
       const message = typeof error === "string"
@@ -411,9 +426,17 @@ export function CheckoutScreen({ navigation }) {
                       color={fnpColors.primary}
                     />
                   </View>
-                  <Text style={[styles.paymentMethodLabel, styles.paymentMethodLabelSelected]}>
-                    Secure online payment via Easebuzz
-                  </Text>
+                  <View style={styles.paymentMethodDetails}>
+                    <Text style={[styles.paymentMethodLabel, styles.paymentMethodLabelSelected]}>
+                      Razorpay Secure Checkout
+                    </Text>
+                    <Text style={styles.paymentMethodSubLabel}>
+                      UPI (GPay, PhonePe, Paytm), Cards & NetBanking
+                    </Text>
+                  </View>
+                </View>
+                <View style={[styles.paymentRadio, styles.paymentRadioSelected]}>
+                  <View style={styles.paymentRadioInner} />
                 </View>
               </View>
             </View>
@@ -739,6 +762,15 @@ const styles = StyleSheet.create({
   paymentMethodLabelSelected: {
     color: fnpColors.primary,
     fontWeight: "600",
+  },
+  paymentMethodDetails: {
+    flex: 1,
+  },
+  paymentMethodSubLabel: {
+    ...typography.caption,
+    color: fnpColors.textMuted,
+    marginTop: 2,
+    fontSize: 11,
   },
   paymentRadio: {
     width: 20,

@@ -155,8 +155,8 @@ export function LoginScreen({ navigation }) {
     dispatch(loginStart());
 
     try {
-      await greenFibreAuthService.login({ email: email.trim(), password });
-      if (!hasAuthCookie()) {
+      const res = await greenFibreAuthService.login({ email: email.trim(), password });
+      if (!hasAuthCookie() && !res?.token) {
         throw new Error("Login succeeded but the session cookie was not stored.");
       }
       await dispatch(completeAuthentication()).unwrap();

@@ -21,7 +21,6 @@ import {
   Modal,
   Alert,
   Linking,
-  SafeAreaView,
   ActivityIndicator,
 } from "react-native";
 import { Image } from "expo-image";
@@ -36,7 +35,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 import { colors, spacing } from "../theme";
 import { ScreenContainer } from "../components/common/ScreenContainer";
 import { ProductCard } from "../components/common/ProductCard";

@@ -41,13 +41,14 @@ export function normalizeOrder(rawOrder) {
         ...order,
         _id: order._id || order.id,
         id: order._id || order.id,
+        razorpayOrderId: order.razorpayOrderId || '',
         easebuzzOrderId: order.easebuzzOrderId || '',
-        orderNumber: order.easebuzzOrderId || order._id || order.id,
+        orderNumber: order.razorpayOrderId || order.easebuzzOrderId || order._id || order.id,
         totalAmount: order.totalAmount ?? 0,
         discountAmount: order.discountAmount ?? 0,
         finalAmount,
         total: finalAmount,
-        paymentMethod: order.paymentMethod || 'Easebuzz',
+        paymentMethod: order.paymentMethod || 'Razorpay',
         paymentStatus,
         orderStatus,
         status: orderStatus,
@@ -80,10 +81,16 @@ export function normalizeOrderListResponse(responseData) {
 }
 
 export function normalizeCreateOrderResponse(responseData) {
+    const order = normalizeOrder(responseData?.order);
     return {
         success: Boolean(responseData?.success),
         message: responseData?.message || '',
-        order: normalizeOrder(responseData?.order),
+        order,
+        paymentMethod: responseData?.paymentMethod || order?.paymentMethod || 'Razorpay',
+        razorpayOrderId: responseData?.razorpayOrderId || responseData?.order_id || order?.razorpayOrderId || null,
+        amount: responseData?.amount || (order?.finalAmount ? Math.round(order.finalAmount * 100) : 0),
+        currency: responseData?.currency || 'INR',
+        keyId: responseData?.key_id || process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_TXVnl7XtdLZsws',
         paymentData: responseData?.paymentData || null,
         easebuzzUrl: responseData?.easebuzzUrl || '',
     };

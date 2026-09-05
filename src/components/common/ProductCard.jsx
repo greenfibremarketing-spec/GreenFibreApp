@@ -113,7 +113,11 @@ export function ProductCard({
     product?.image ||
     product?.images?.[0] ||
     "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSYOnLV6L1XFBOr96iaQOJe7T6ckbbO7MM2V_rRGnQMNA&s=10";
-  const productCategory = product?.categoryName || product?.category?.name || product?.category || "";
+  const productCategory =
+    product?.categoryName ||
+    product?.category?.name ||
+    (typeof product?.category === "string" ? product.category : "") ||
+    "";
   const productRating = product?.averageRating ?? product?.rating ?? null;
   const productReviewCount = product?.reviewCount || 0;
   const productStock = product?.totalStock ?? product?.stock;

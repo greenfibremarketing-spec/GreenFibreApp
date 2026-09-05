@@ -1,5 +1,5 @@
 import { authApiClient } from '../authClient';
-import { clearCookies, hasAuthCookie, resetCookieJarReady } from '../cookieJar';
+import { clearCookies, hasAuthCookie, resetCookieJarReady, saveCookies, TOKEN_COOKIE_NAME } from '../cookieJar';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -36,9 +36,12 @@ export const greenFibreAuthService = {
                 email: normalizeEmail(email),
                 otp: String(otp).trim(),
             });
+            if (response.data?.token) {
+                await saveCookies({ [TOKEN_COOKIE_NAME]: response.data.token });
+            }
             return {
                 ...response.data,
-                authenticated: hasAuthCookie(),
+                authenticated: hasAuthCookie() || Boolean(response.data?.token),
             };
         }
         catch (error) {
@@ -64,9 +67,12 @@ export const greenFibreAuthService = {
                 email: normalizeEmail(email),
                 password,
             });
+            if (response.data?.token) {
+                await saveCookies({ [TOKEN_COOKIE_NAME]: response.data.token });
+            }
             return {
                 ...response.data,
-                authenticated: hasAuthCookie(),
+                authenticated: hasAuthCookie() || Boolean(response.data?.token),
             };
         }
         catch (error) {

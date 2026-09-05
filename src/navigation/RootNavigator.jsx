@@ -15,6 +15,7 @@ import { CheckoutScreen } from "../screens/CheckoutScreen";
 import { BlogDetailsScreen } from "../screens/BlogDetailsScreen";
 import { TrackOrderScreen } from "../screens/TrackOrderScreen";
 import { EasebuzzPaymentScreen } from "../screens/EasebuzzPaymentScreen";
+import { RazorpayPaymentScreen } from "../screens/RazorpayPaymentScreen";
 import { OrderConfirmationScreen } from "../screens/OrderConfirmationScreen";
 import { LoginScreen } from "../screens/LoginScreen";
 import { RegisterScreen } from "../screens/RegisterScreen";
@@ -91,9 +92,15 @@ export function RootNavigator() {
         <Stack.Screen name="TrackOrder" component={TrackOrderScreen} />
 
         <Stack.Screen
+          name="RazorpayPayment"
+          component={RazorpayPaymentScreen}
+          options={{ presentation: "fullScreenModal", headerShown: false }}
+        />
+
+        <Stack.Screen
           name="EasebuzzPayment"
-          component={EasebuzzPaymentScreen}
-          options={{ presentation: "fullScreenModal" }}
+          component={RazorpayPaymentScreen}
+          options={{ presentation: "fullScreenModal", headerShown: false }}
         />
 
         <Stack.Screen

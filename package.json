@@ -2,7 +2,9 @@
   "scripts": {
     "dev:backend": "npm --prefix backend run dev",
     "prove:auth-transport": "node scripts/prove-auth-transport.mjs",
-    "prove:cart-normalize": "node scripts/prove-cart-normalize.mjs"
+    "prove:cart-normalize": "node scripts/prove-cart-normalize.mjs",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
@@ -46,5 +48,7 @@
     "mongodb-memory-server": "^11.2.0",
     "mongoose": "^9.9.4",
     "typescript": "~5.9.2"
-  }
+  },
+  "name": "Green_fibre_application",
+  "version": "1.0.0"
 }

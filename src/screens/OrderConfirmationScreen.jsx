@@ -52,7 +52,7 @@ export function OrderConfirmationScreen({ navigation, route }) {
           <View style={styles.detailsCard}>
             <Text style={styles.detailLabel}>Order Number</Text>
             <Text style={styles.detailValue}>
-              {displayOrder.easebuzzOrderId || displayOrder._id}
+              {displayOrder.orderNumber || displayOrder.razorpayOrderId || displayOrder.easebuzzOrderId || displayOrder._id}
             </Text>
             <Text style={styles.detailLabel}>Amount Paid</Text>
             <Text style={styles.detailValue}>
