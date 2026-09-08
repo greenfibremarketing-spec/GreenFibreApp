@@ -8,19 +8,35 @@ import { resetWishlistState } from '../slices/wishlistSlice';
 export const syncSessionAfterAuth = createAsyncThunk(
     'session/syncAfterAuth',
     async (_, { dispatch }) => {
-        const guestItems = await loadGuestCart();
+        try {
+            const guestItems = await loadGuestCart();
+            if (guestItems.length > 0) {
+                try {
+                    await dispatch(mergeCart(guestItems.map((item) => ({
+                        productId: item.productId,
+                        colorIndex: item.colorIndex,
+                        quantity: item.quantity,
+                    })))).unwrap();
+                    await clearGuestCart();
+                } catch {
+                    // Continue even if merge has minor issues
+                }
+            }
 
-        if (guestItems.length > 0) {
-            await dispatch(mergeCart(guestItems.map((item) => ({
-                productId: item.productId,
-                colorIndex: item.colorIndex,
-                quantity: item.quantity,
-            })))).unwrap();
-            await clearGuestCart();
+            try {
+                await dispatch(fetchCart()).unwrap();
+            } catch {
+                // Ignore
+            }
+
+            try {
+                await dispatch(fetchWishlist()).unwrap();
+            } catch {
+                // Ignore
+            }
+        } catch {
+            // General catch
         }
-
-        await dispatch(fetchCart()).unwrap();
-        await dispatch(fetchWishlist()).unwrap();
     },
 );
 

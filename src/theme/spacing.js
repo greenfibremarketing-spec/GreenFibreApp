@@ -41,6 +41,8 @@ export const spacing = {
   xxxl: 64,
   screen: 16,
   cardRadius: 20,
+  buttonRadius: 14,
+  pillRadius: 50,
 };
 
 export const shadows = {

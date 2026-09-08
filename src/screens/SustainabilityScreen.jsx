@@ -13,7 +13,7 @@ import {
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, DrawerActions } from "@react-navigation/native";
 import { sustainabilityContent } from "../data/content";
 import { placeholders } from "../data/images";
 import { colors, spacing, typography, shadows } from "../theme";
@@ -118,7 +118,7 @@ export function SustainabilityScreen() {
 
   return (
     <ScreenContainer
-      onMenuPress={() => navigation.openDrawer()}
+      onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
       headerTitle="Sustainability"
       headerRight={
         <TouchableOpacity

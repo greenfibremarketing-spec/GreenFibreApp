@@ -168,7 +168,7 @@ export function ForgotPasswordScreen({ navigation }) {
       setSent(true);
       setResendCount((prev) => prev + 1);
       setTimer(60);
-      navigation.navigate("RestPassword", {
+      navigation.navigate("ResetPassword", {
         email: email,
       });
     } catch (e) {

@@ -14,6 +14,8 @@ import {
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { DrawerActions } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { productService } from "../api/services/productService";
 import { getProductGalleryImages, normalizeProduct, resolveImageUrl, PLACEHOLDER_IMAGE } from "../utils/catalogNormalize";
 import { formatPrice } from "../utils/helpers";
@@ -67,6 +69,7 @@ export function ProductDetailsScreen({ navigation, route }) {
     : null;
 
   const dispatch = useAppDispatch();
+  const insets = useSafeAreaInsets();
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
   const isWishlisted = useAppSelector(selectIsInWishlist(productId));
   const cartLoading = useAppSelector((state) => state.cart.loading);
@@ -187,10 +190,11 @@ export function ProductDetailsScreen({ navigation, route }) {
     ]).start();
 
     try {
+      const targetProductId = product._id || product.id || productId;
       if (isAuthenticated) {
         await dispatch(
           addToCartThunk({
-            productId: product._id,
+            productId: targetProductId,
             colorIndex: validation.colorIndex,
             quantity: validation.quantity,
           }),
@@ -199,7 +203,7 @@ export function ProductDetailsScreen({ navigation, route }) {
       } else {
         await dispatch(
           addToGuestCart({
-            productId: product._id,
+            productId: targetProductId,
             colorIndex: validation.colorIndex,
             quantity: validation.quantity,
           }),
@@ -255,7 +259,8 @@ export function ProductDetailsScreen({ navigation, route }) {
     ]).start();
 
     try {
-      const result = await dispatch(toggleWishlistThunk(product._id)).unwrap();
+      const targetProductId = product._id || product.id || productId;
+      const result = await dispatch(toggleWishlistThunk(targetProductId)).unwrap();
       dispatch(
         showToast({
           message: result.isWishlisted
@@ -310,10 +315,18 @@ export function ProductDetailsScreen({ navigation, route }) {
     ).start();
   }, []);
 
+  const handleBackOrMenu = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.dispatch(DrawerActions.openDrawer());
+    }
+  };
+
   if (loading) {
     return (
       <ScreenContainer
-        onMenuPress={() => navigation.openDrawer()}
+        onMenuPress={handleBackOrMenu}
         headerTitle="Product"
       >
         <HeroSkeleton />
@@ -324,7 +337,7 @@ export function ProductDetailsScreen({ navigation, route }) {
   if (error || !product) {
     return (
       <ScreenContainer
-        onMenuPress={() => navigation.openDrawer()}
+        onMenuPress={handleBackOrMenu}
         headerTitle="Product"
       >
         <ErrorState
@@ -352,20 +365,21 @@ export function ProductDetailsScreen({ navigation, route }) {
           item?.value ||
           item?.feature ||
           item?.description ||
-          "";
+          JSON.stringify(item);
     if (!text) return null;
 
     return (
       <Animated.View
+        key={index}
         style={[
-          styles.featureRow,
+          styles.featureItem,
           {
             opacity: fadeAnim,
             transform: [
               {
-                translateX: slideAnim.interpolate({
-                  inputRange: [0, 30],
-                  outputRange: [0, 30],
+                translateX: fadeAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-20, 0],
                 }),
               },
             ],
@@ -374,7 +388,7 @@ export function ProductDetailsScreen({ navigation, route }) {
       >
         <LinearGradient
           colors={[natureColors.primaryLight, "#C8E6C9"]}
-          style={styles.featureIconWrap}
+          style={styles.featureBullet}
         >
           <Ionicons name="leaf-outline" size={14} color={natureColors.primary} />
         </LinearGradient>
@@ -385,7 +399,7 @@ export function ProductDetailsScreen({ navigation, route }) {
 
   return (
     <ScreenContainer
-      onMenuPress={() => navigation.openDrawer()}
+      onMenuPress={handleBackOrMenu}
       headerTitle=""
       scroll={false}
       headerRight={
@@ -748,71 +762,62 @@ export function ProductDetailsScreen({ navigation, route }) {
       </Animated.ScrollView>
 
       {/* ===== BOTTOM ACTION BAR ===== */}
-      <View style={styles.footer}>
-        <LinearGradient
-          colors={["rgba(255,255,255,0.95)", "#FFFFFF"]}
-          style={styles.footerGradient}
-        >
-          <View style={styles.footerContent}>
-            <View style={styles.footerPrice}>
-              <Text style={styles.footerPriceLabel}>Total</Text>
-              <Text style={styles.footerPriceValue}>
-                {formatPrice(product.price * quantity)}
-              </Text>
-            </View>
-            <View style={styles.footerButtons}>
-              <TouchableOpacity
-                style={styles.wishlistFooterBtn}
-                onPress={handleToggleWishlist}
-                activeOpacity={0.7}
-              >
-                <Animated.View style={{ transform: [{ scale: heartScale }] }}>
-                  <Ionicons
-                    name={isWishlisted ? "heart" : "heart-outline"}
-                    size={22}
-                    color={
-                      isWishlisted ? natureColors.danger : natureColors.text
-                    }
-                  />
-                </Animated.View>
-              </TouchableOpacity>
-
-              {/* UPDATED: Add to Cart Button - Now navigates to Cart */}
-              <TouchableOpacity
-                style={styles.cartBtn}
-                onPress={handleAddToCart}
-                activeOpacity={0.8}
-              >
-                <Animated.View
-                  style={{ transform: [{ scale: cartScale }], flex: 1 }}
-                >
-                  <LinearGradient
-                    colors={[natureColors.primary, natureColors.primaryDark]}
-                    style={styles.cartBtnGradient}
-                  >
-                    <Ionicons name="bag-outline" size={20} color="#FFFFFF" />
-                    <Text style={styles.cartBtnText}>Add to Cart</Text>
-                  </LinearGradient>
-                </Animated.View>
-              </TouchableOpacity>
-
-              {/* UPDATED: Buy Now Button - Now navigates to Cart */}
-              <TouchableOpacity
-                style={styles.buyBtn}
-                onPress={handleBuyNow}
-                activeOpacity={0.8}
-              >
-                <LinearGradient
-                  colors={["#2E7D32", "#1B5E20"]}
-                  style={styles.buyBtnGradient}
-                >
-                  <Ionicons name="leaf-outline" size={18} color="#FFFFFF" />
-                  <Text style={styles.buyBtnText}>Buy Now</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
+      <View
+        style={[
+          styles.footer,
+          { paddingBottom: Math.max(insets.bottom, 12) },
+        ]}
+      >
+        <View style={styles.footerContent}>
+          {/* Price Column */}
+          <View style={styles.footerPrice}>
+            <Text style={styles.footerPriceLabel}>TOTAL</Text>
+            <Text style={styles.footerPriceValue}>
+              {formatPrice(product.price * quantity)}
+            </Text>
           </View>
-        </LinearGradient>
+
+          {/* Action Buttons */}
+          <View style={styles.footerButtons}>
+            {/* Add to Cart Button */}
+            <TouchableOpacity
+              style={styles.cartBtn}
+              onPress={handleAddToCart}
+              activeOpacity={0.8}
+            >
+              <Animated.View
+                style={[
+                  styles.cartBtnInner,
+                  { transform: [{ scale: cartScale }] },
+                ]}
+              >
+                <Ionicons
+                  name="bag-add-outline"
+                  size={17}
+                  color={colors.primary}
+                />
+                <Text style={styles.cartBtnText}>Add to Cart</Text>
+              </Animated.View>
+            </TouchableOpacity>
+
+            {/* Buy Now Button */}
+            <TouchableOpacity
+              style={styles.buyBtn}
+              onPress={handleBuyNow}
+              activeOpacity={0.85}
+            >
+              <LinearGradient
+                colors={[colors.primary, colors.primaryDark || "#122E1A"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.buyBtnGradient}
+              >
+                <Ionicons name="flash" size={15} color="#FFFFFF" />
+                <Text style={styles.buyBtnText}>Buy Now</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     </ScreenContainer>
   );
@@ -1202,87 +1207,96 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    ...shadows.medium,
-  },
-  footerGradient: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: spacing.md,
-    paddingBottom: Platform.OS === "ios" ? 34 : spacing.lg,
+    backgroundColor: colors.cream || "#FAF7F0",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "rgba(28, 74, 42, 0.12)",
+    paddingTop: 10,
+    shadowColor: "rgba(28, 74, 42, 0.15)",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 10,
   },
   footerContent: {
-    paddingHorizontal: spacing.screen,
+    paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
+    gap: 12,
   },
   footerPrice: {
-    flex: 1,
+    minWidth: 72,
+    justifyContent: "center",
   },
   footerPriceLabel: {
-    ...typography.caption,
-    color: natureColors.textMuted,
-    fontWeight: "500",
+    fontSize: 9,
+    fontFamily: "DMMono_500Medium",
+    color: colors.textMuted || "#8F958E",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
   },
   footerPriceValue: {
-    ...typography.h2,
-    color: natureColors.primary,
-    fontSize: 20,
-    fontWeight: "900",
+    fontFamily: "PlayfairDisplay_700Bold",
+    color: colors.primary || "#1C4A2A",
+    fontSize: 18,
+    marginTop: 1,
   },
   footerButtons: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
-    flex: 2,
-  },
-  wishlistFooterBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#F5F5F5",
-    alignItems: "center",
-    justifyContent: "center",
+    gap: 8,
   },
   cartBtn: {
     flex: 1,
-    borderRadius: 14,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(28, 74, 42, 0.05)",
+    borderWidth: 1.5,
+    borderColor: "rgba(28, 74, 42, 0.22)",
     overflow: "hidden",
   },
-  cartBtnGradient: {
+  cartBtnInner: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    gap: 5,
+    paddingHorizontal: 6,
   },
   cartBtnText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
+    color: colors.primary || "#1C4A2A",
+    fontSize: 12.5,
+    fontFamily: "DMSans_600SemiBold",
+    letterSpacing: 0.1,
   },
   buyBtn: {
     flex: 1,
-    borderRadius: 14,
+    height: 44,
+    borderRadius: 22,
     overflow: "hidden",
+    shadowColor: colors.primary || "#1C4A2A",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 4,
+    elevation: 3,
   },
   buyBtnGradient: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    gap: 5,
+    paddingHorizontal: 6,
   },
   buyBtnText: {
     color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: 13,
+    fontFamily: "DMSans_700Bold",
+    letterSpacing: 0.2,
   },
 
   // ===== SPACER =====
   bottomSpacer: {
-    height: 20,
+    height: 30,
   },
 });

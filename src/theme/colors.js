@@ -1,51 +1,69 @@
 // src/theme/colors.js
-// Premium Green Fibre palette — earthy luxury meets sustainable living
+// Green Fibre — Premium editorial palette
+// Deep forest green + warm ivory + terracotta accent
 
 export const colors = {
-  // Primary greens — deep forest to bright accent
-  primary: '#2E7D32',
-  primaryDark: '#1B5E20',
-  primaryLight: '#4CAF50',
-  primaryMuted: '#E8F5E9',
-  primarySurface: '#F0F7F1',
+  // ── Primary Forest Greens ─────────────────────────────────────
+  primary: '#1C4A2A',        // Deep forest (richer than previous #2E7D32)
+  primaryDark: '#122E1A',    // Near-black forest for headlines
+  primaryLight: '#2E6B3A',   // Mid-forest for gradients
+  primaryMuted: '#E4EDE6',   // Washed green for tinted surfaces
+  primarySurface: '#EFF5F0', // Very light green tint for backgrounds
 
-  // Cream / warm neutrals — the signature warm base
-  cream: '#FAF7F2',
-  creamDark: '#F0EBE3',
-  creamLight: '#FDFBF7',
-  creamAccent: '#EDE8DF',
+  // ── Terracotta Accent ─────────────────────────────────────────
+  // Used for: cart badge, primary CTA, "Add to cart", key highlights
+  terracotta: '#B85C3A',
+  terracottaDark: '#8E3D22',
+  terracottaLight: '#F5E8E3',
 
-  // Earth tones — for depth and organic feel
+  // ── Cream / Warm Ivory Base ───────────────────────────────────
+  cream: '#FAF7F0',          // Main background — warm ivory
+  creamDark: '#F0EAE0',      // Secondary bg, pressed states
+  creamLight: '#FDFCF9',     // Cards, modals
+  creamAccent: '#E8E0D4',    // Dividers, borders on cream
+
+  // ── Earth Tones ───────────────────────────────────────────────
   earth: '#8B7355',
   earthLight: '#C4A882',
   earthDark: '#5C4A32',
 
-  // Background hierarchy
-  background: '#FAF7F2',
-  backgroundSecondary: '#F5F0E8',
+  // ── Surface / Card Hierarchy ─────────────────────────────────
+  background: '#FAF7F0',
+  backgroundSecondary: '#F2EDE4',   // Biscuit surface
   cardBackground: '#FFFFFF',
-  surface: '#F5F0E8',
+  surface: '#F2EDE4',
+  surfaceWarm: '#EDE9E2',           // Warm skeleton bg
 
-  // Text hierarchy — warm charcoal instead of cold black
-  text: '#2C2C2C',
-  textPrimary: '#2C2C2C',
-  textSecondary: '#6B6B6B',
-  textLight: '#9E9E9E',
-  textMuted: '#A3A3A3',
+  // ── Text Hierarchy — warm charcoal ───────────────────────────
+  text: '#2C2416',           // Primary text — warm near-black
+  textPrimary: '#2C2416',
+  textSecondary: '#7A6F60',  // Muted warm brown-grey
+  textLight: '#A89B8C',
+  textMuted: '#A89B8C',
+  textOnDark: '#FAF7F0',     // Text on dark green surfaces
 
-  // Base
+  // ── Base ──────────────────────────────────────────────────────
   white: '#FFFFFF',
-  black: '#000000',
-  border: '#E8E3DA',
-  borderLight: '#F0EBE3',
+  black: '#1A1008',          // Warm black
+  border: '#E2DBD0',         // Main border — warm beige
+  borderLight: '#EDE9E2',    // Subtle dividers
 
-  // Status colors — muted, premium tones
-  success: '#388E3C',
-  error: '#C62828',
-  warning: '#E6A817',
+  // ── Status Colors — muted, premium ───────────────────────────
+  success: '#2E6B3A',
+  successLight: '#E4EDE6',
+  error: '#A0291B',
+  errorLight: '#F5E4E2',
+  warning: '#C17D2A',
+  warningLight: '#FBF0E0',
 
-  // Utility
-  shadow: 'rgba(43, 30, 10, 0.08)',
-  overlay: 'rgba(0, 0, 0, 0.45)',
+  // ── WhatsApp ─────────────────────────────────────────────────
+  whatsapp: '#25D366',
+  whatsappDark: '#128C7E',
+
+  // ── Utility ───────────────────────────────────────────────────
+  shadow: 'rgba(28, 74, 42, 0.08)',
+  shadowWarm: 'rgba(44, 36, 22, 0.07)',
+  overlay: 'rgba(18, 46, 26, 0.55)',
+  overlayLight: 'rgba(0, 0, 0, 0.3)',
   transparent: 'transparent',
 };

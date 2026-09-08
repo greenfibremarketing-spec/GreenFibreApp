@@ -39,10 +39,19 @@ export const restoreAuthSession = createAsyncThunk(
 
 export const completeAuthentication = createAsyncThunk(
     'auth/completeAuthentication',
-    async (_, { dispatch }) => {
-        const user = await fetchAuthenticatedUser();
-        dispatch(loginSuccess({ user }));
-        return user;
+    async (fallbackUser, { dispatch }) => {
+        try {
+            const user = await fetchAuthenticatedUser();
+            dispatch(loginSuccess({ user }));
+            return user;
+        } catch (err) {
+            if (fallbackUser) {
+                const normalized = normalizeAuthUser(fallbackUser?.user || fallbackUser);
+                dispatch(loginSuccess({ user: normalized }));
+                return normalized;
+            }
+            throw err;
+        }
     },
 );
 

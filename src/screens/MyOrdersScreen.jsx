@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, DrawerActions } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 
@@ -366,7 +366,7 @@ export function MyOrdersScreen() {
   if (loading) {
     return (
       <ScreenContainer
-        onMenuPress={() => navigation.openDrawer()}
+        onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         headerTitle="My Orders"
       >
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
@@ -387,7 +387,7 @@ export function MyOrdersScreen() {
   if (!isAuthenticated) {
     return (
       <ScreenContainer
-        onMenuPress={() => navigation.openDrawer()}
+        onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         headerTitle="My Orders"
       >
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
@@ -426,7 +426,7 @@ export function MyOrdersScreen() {
   if (!orders || orders.length === 0) {
     return (
       <ScreenContainer
-        onMenuPress={() => navigation.openDrawer()}
+        onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         headerTitle="My Orders"
         scroll={false} // ✅ Add this to prevent nested ScrollView
       >
@@ -479,7 +479,7 @@ export function MyOrdersScreen() {
 
   return (
     <ScreenContainer
-      onMenuPress={() => navigation.openDrawer()}
+      onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
       headerTitle="My Orders"
       scroll={false} // ✅ Add this to prevent nested ScrollView
     >

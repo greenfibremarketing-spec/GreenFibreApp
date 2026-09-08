@@ -1,3 +1,12 @@
+// src/components/common/ProductCard.jsx
+// Premium product card:
+// - Wishlist button TOP-RIGHT (not buried at image bottom)
+// - No overlay gradient — cream cards don't need it
+// - DM Mono overline for category
+// - Playfair-adjacent warm charcoal name
+// - Terracotta discount badge
+// - Clean shadow: rgba(28,74,42,0.06)
+
 import React, { useRef, useState } from "react";
 import {
   View,
@@ -11,7 +20,7 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import Reanimated, { FadeInDown } from "react-native-reanimated";
 import { formatPrice } from "../../utils/helpers";
-import { colors, spacing, typography, shadows } from "../../theme";
+import { colors, spacing } from "../../theme";
 import { useNavigation } from "@react-navigation/native";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { toggleWishlist as toggleWishlistThunk } from "../../store/thunks/wishlistThunks";
@@ -32,71 +41,37 @@ export function ProductCard({
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
   const navigation = useNavigation();
   const isWishlisted = useAppSelector(selectIsInWishlist(product?._id));
-
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const [imageFailed, setImageFailed] = useState(false);
 
-  // Handle wishlist press with animation
   const handleWishlistPress = async () => {
     Animated.sequence([
-      Animated.spring(scaleAnim, {
-        toValue: 1.3,
-        useNativeDriver: true,
-        speed: 50,
-        bounciness: 10,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-        speed: 50,
-        bounciness: 10,
-      }),
+      Animated.spring(scaleAnim, { toValue: 1.35, useNativeDriver: true, speed: 50, bounciness: 12 }),
+      Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, speed: 50, bounciness: 12 }),
     ]).start();
 
-    if (!product?._id) {
-      return;
-    }
+    if (!product?._id) return;
 
     if (!isAuthenticated) {
-      dispatch(
-        showToast({
-          message: "Please log in to use your wishlist.",
-          type: "error",
-        }),
-      );
+      dispatch(showToast({ message: "Please log in to use your wishlist.", type: "error" }));
       navigation.navigate("Login");
       return;
     }
 
     try {
       const result = await dispatch(toggleWishlistThunk(product._id)).unwrap();
-      dispatch(
-        showToast({
-          message: result.isWishlisted
-            ? "❤️ Added to wishlist"
-            : "💚 Removed from wishlist",
-          type: "success",
-        }),
-      );
+      dispatch(showToast({
+        message: result.isWishlisted ? "❤️ Added to wishlist" : "Removed from wishlist",
+        type: "success",
+      }));
     } catch (error) {
-      dispatch(
-        showToast({
-          message: error || "Failed to update wishlist",
-          type: "error",
-        }),
-      );
+      dispatch(showToast({ message: error || "Failed to update wishlist", type: "error" }));
     }
   };
 
-  // Calculate discount
   const getDiscount = () => {
-    if (
-      product?.originalPrice &&
-      product?.price &&
-      product.price < product.originalPrice
-    ) {
-      const discount =
-        ((product.originalPrice - product.price) / product.originalPrice) * 100;
-      return Math.round(discount);
+    if (product?.originalPrice && product?.price && product.price < product.originalPrice) {
+      return Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
     }
     return 0;
   };
@@ -104,23 +79,13 @@ export function ProductCard({
   const discount = getDiscount();
   const isHorizontal = variant === "horizontal";
   const cardWidth = isHorizontal ? width * 0.6 : CARD_WIDTH;
-  const imageHeight = isHorizontal ? 160 : 160;
 
-  const [imageFailed, setImageFailed] = useState(false);
-
-  // Safely access product properties
-  const productName = product?.name || "Product Name";
+  const productName = product?.name || "Product";
   const productPrice = product?.price || 0;
   const productOriginalPrice = product?.originalPrice || null;
-  const rawImage =
-    product?.image ||
-    product?.images?.[0] ||
-    product?.colors?.[0]?.images?.[0] ||
-    null;
+  const rawImage = product?.image || product?.images?.[0] || product?.colors?.[0]?.images?.[0] || null;
   const resolvedUri = resolveImageUrl(rawImage);
-  const productImage = (!imageFailed && resolvedUri)
-    ? resolvedUri
-    : PLACEHOLDER_IMAGE;
+  const productImage = (!imageFailed && resolvedUri) ? resolvedUri : PLACEHOLDER_IMAGE;
   const productCategory =
     product?.categoryName ||
     product?.category?.name ||
@@ -128,56 +93,46 @@ export function ProductCard({
   const productRating = product?.averageRating ?? product?.rating ?? null;
   const productReviewCount = product?.reviewCount || 0;
   const productStock = product?.totalStock ?? product?.stock;
-  const isInStock = product?.inStock !== false;
   const isSustainable = product?.sustainable || false;
   const isNew = product?.isNew || false;
 
   return (
     <Reanimated.View
-      entering={FadeInDown.delay(index * 80)
-        .duration(400)
-        .springify()}
+      entering={FadeInDown.delay(index * 70).duration(380).springify()}
       style={[styles.wrapper, isHorizontal && styles.horizontalWrapper]}
     >
       <TouchableOpacity
-        style={[
-          styles.card,
-          { width: cardWidth },
-          isHorizontal && styles.horizontalCard,
-        ]}
+        style={[styles.card, { width: cardWidth }, isHorizontal && styles.horizontalCard]}
         onPress={onPress}
-        activeOpacity={0.9}
+        activeOpacity={0.92}
       >
-        {/* Image Section */}
-        <View style={[styles.imageWrap, { height: imageHeight }]}>
+        {/* ── Image ── */}
+        <View style={[styles.imageWrap, { height: isHorizontal ? 140 : 168 }]}>
           <Image
             source={{ uri: productImage }}
             style={styles.image}
             contentFit="cover"
-            transition={300}
+            transition={250}
             cachePolicy="memory-disk"
             onError={() => setImageFailed(true)}
           />
 
-          {/* Image Overlay - removed to reduce visual clutter, keeping it subtle */}
-          <View style={styles.imageOverlay} />
-
-          {/* Eco Badge */}
+          {/* Eco badge — top left */}
           {isSustainable && (
             <View style={styles.ecoBadge}>
-              <Ionicons name="leaf" size={12} color="#FFFFFF" />
+              <Ionicons name="leaf" size={10} color="#FFFFFF" />
               <Text style={styles.ecoBadgeText}>Eco</Text>
             </View>
           )}
 
-          {/* Discount Badge */}
-          {discount > 0 && (
+          {/* Discount badge — top left below eco */}
+          {discount > 0 && !isSustainable && (
             <View style={styles.discountBadge}>
-              <Text style={styles.discountText}>{discount}% OFF</Text>
+              <Text style={styles.discountText}>{discount}% off</Text>
             </View>
           )}
 
-          {/* Wishlist Button */}
+          {/* Wishlist — TOP RIGHT (key change from previous bottom-right) */}
           <TouchableOpacity
             style={styles.wishlistBtn}
             onPress={handleWishlistPress}
@@ -186,27 +141,23 @@ export function ProductCard({
             <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
               <Ionicons
                 name={isWishlisted ? "heart" : "heart-outline"}
-                size={20}
-                color={isWishlisted ? "#DC2626" : "#1A1A1A"}
+                size={18}
+                color={isWishlisted ? colors.terracotta : colors.textPrimary}
               />
             </Animated.View>
           </TouchableOpacity>
 
-          {/* Stock Indicator */}
-          {productStock !== undefined && productStock < 5 && (
+          {/* Low stock — bottom left, only when critical */}
+          {productStock !== undefined && productStock > 0 && productStock < 5 && (
             <View style={styles.stockBadge}>
-              <Text style={styles.stockText}>
-                {productStock === 0
-                  ? "Out of Stock"
-                  : `Only ${productStock} left`}
-              </Text>
+              <Text style={styles.stockText}>Only {productStock} left</Text>
             </View>
           )}
         </View>
 
-        {/* Info Section - improved spacing to prevent overlap */}
+        {/* ── Info ── */}
         <View style={styles.info}>
-          {/* Category */}
+          {/* Category overline — DM Mono */}
           {productCategory ? (
             <View style={styles.categoryRow}>
               <Text style={styles.category} numberOfLines={1}>
@@ -220,33 +171,27 @@ export function ProductCard({
             </View>
           ) : null}
 
-          {/* Product Name */}
+          {/* Product name — warm charcoal */}
           <Text style={styles.name} numberOfLines={2}>
             {productName}
           </Text>
 
-          {/* Rating */}
+          {/* Rating — compact */}
           {productRating ? (
             <View style={styles.ratingRow}>
-              <Ionicons name="star" size={14} color="#F59E0B" />
+              <Ionicons name="star" size={11} color="#D4A853" />
               <Text style={styles.rating}>{productRating.toFixed(1)}</Text>
-              <Text style={styles.reviews}>({productReviewCount} reviews)</Text>
+              <Text style={styles.reviews}>({productReviewCount})</Text>
             </View>
           ) : null}
 
-          {/* Price */}
+          {/* Price row */}
           <View style={styles.priceRow}>
             <Text style={styles.price}>{formatPrice(productPrice)}</Text>
             {productOriginalPrice && productOriginalPrice > productPrice && (
-              <Text style={styles.originalPrice}>
-                {formatPrice(productOriginalPrice)}
-              </Text>
+              <Text style={styles.originalPrice}>{formatPrice(productOriginalPrice)}</Text>
             )}
           </View>
-
-          {/* ============================================================ */}
-          {/* QUICK ADD BUTTON REMOVED — as requested */}
-          {/* ============================================================ */}
         </View>
       </TouchableOpacity>
     </Reanimated.View>
@@ -256,129 +201,102 @@ export function ProductCard({
 export const PRODUCT_CARD_WIDTH = CARD_WIDTH;
 
 const styles = StyleSheet.create({
-  wrapper: {
-    marginBottom: 12,
-  },
-  horizontalWrapper: {
-    marginRight: 12,
-  },
+  wrapper: { marginBottom: 12 },
+  horizontalWrapper: { marginRight: 12 },
   card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
+    backgroundColor: colors.white,
+    borderRadius: 18,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#F0F0F0",
-    // Using shadow for iOS, elevation for Android
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    borderColor: colors.borderLight,
+    shadowColor: "rgba(28,74,42,1)",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
     elevation: 3,
   },
   horizontalCard: {
     flexDirection: "row",
-    height: 160,
+    height: 140,
   },
   imageWrap: {
     width: "100%",
     position: "relative",
-    backgroundColor: "#F5F5F5",
+    backgroundColor: colors.surfaceWarm,
   },
   image: {
     width: "100%",
     height: "100%",
   },
-  imageOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 40, // Reduced height to keep it subtle
-    backgroundColor: "rgba(0,0,0,0.08)",
-  },
+  // ── Badges ────────────────────────────────────────────────
   ecoBadge: {
     position: "absolute",
     top: 10,
     left: 10,
-    backgroundColor: "#2E7D32",
+    backgroundColor: colors.primary,
     borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    gap: 3,
   },
   ecoBadgeText: {
     color: "#FFFFFF",
+    fontFamily: "DMMono_500Medium",
     fontSize: 9,
-    fontWeight: "700",
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
   },
   discountBadge: {
     position: "absolute",
     top: 10,
-    right: 10,
-    backgroundColor: "#DC2626",
+    left: 10,
+    backgroundColor: colors.terracotta,
     borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
   },
   discountText: {
     color: "#FFFFFF",
+    fontFamily: "DMSans_600SemiBold",
     fontSize: 10,
-    fontWeight: "700",
   },
+  // ── Wishlist TOP-RIGHT ────────────────────────────────────
   wishlistBtn: {
     position: "absolute",
-    bottom: 12,
-    right: 12,
-    backgroundColor: "rgba(255,255,255,0.95)",
-    borderRadius: 20,
-    width: 38,
-    height: 38,
+    top: 10,
+    right: 10,
+    backgroundColor: "rgba(255,255,255,0.93)",
+    borderRadius: 18,
+    width: 34,
+    height: 34,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.04)",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.07,
+    shadowRadius: 4,
+    elevation: 2,
   },
   stockBadge: {
     position: "absolute",
-    bottom: 12,
-    left: 12,
-    backgroundColor: "rgba(0,0,0,0.75)",
+    bottom: 10,
+    left: 10,
+    backgroundColor: "rgba(28,20,10,0.7)",
     borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
   },
   stockText: {
     color: "#FFFFFF",
+    fontFamily: "DMSans_400Regular",
     fontSize: 9,
-    fontWeight: "600",
   },
+  // ── Info section ─────────────────────────────────────────
   info: {
-    padding: 14,
-    paddingTop: 12,
-    gap: 4, // consistent spacing between elements
+    padding: 13,
+    paddingTop: 11,
+    gap: 4,
     flex: 1,
   },
   categoryRow: {
@@ -388,65 +306,62 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   category: {
-    fontSize: 10,
-    color: "#2E7D32",
-    fontWeight: "600",
+    fontFamily: "DMMono_400Regular",
+    fontSize: 9,
+    color: colors.primary,
+    letterSpacing: 1.0,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
   },
   newBadge: {
-    backgroundColor: "#F59E0B",
-    borderRadius: 12,
-    paddingHorizontal: 8,
+    backgroundColor: "#D4A853",
+    borderRadius: 10,
+    paddingHorizontal: 7,
     paddingVertical: 2,
   },
   newBadgeText: {
     color: "#FFFFFF",
+    fontFamily: "DMMono_500Medium",
     fontSize: 8,
-    fontWeight: "700",
+    letterSpacing: 0.5,
   },
   name: {
+    fontFamily: "DMSans_600SemiBold",
     fontSize: 14,
-    fontWeight: "600",
-    color: "#1A1A1A",
     lineHeight: 20,
-    minHeight: 40, // ensures consistent space for 2 lines
-    marginBottom: 2,
+    color: colors.text,
+    minHeight: 40,
   },
   ratingRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    marginTop: 2,
-    marginBottom: 2,
+    gap: 3,
+    marginTop: 1,
   },
   rating: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#1A1A1A",
+    fontFamily: "DMSans_600SemiBold",
+    fontSize: 11,
+    color: colors.text,
   },
   reviews: {
-    fontSize: 11,
-    color: "#9CA3AF",
+    fontFamily: "DMSans_400Regular",
+    fontSize: 10,
+    color: colors.textMuted,
   },
   priceRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
     marginTop: 4,
-    marginBottom: 2,
   },
   price: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#1A5C2A",
+    fontFamily: "DMSans_700Bold",
+    fontSize: 16,
+    color: colors.primary,
   },
   originalPrice: {
-    fontSize: 13,
-    color: "#9CA3AF",
+    fontFamily: "DMSans_400Regular",
+    fontSize: 12,
+    color: colors.textMuted,
     textDecorationLine: "line-through",
   },
-  // ============================================================
-  // QUICK ADD BUTTON STYLES REMOVED — no longer needed
-  // ============================================================
 });

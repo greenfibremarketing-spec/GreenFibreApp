@@ -1,852 +1,5 @@
-// import React, { useMemo, useState, useRef, useEffect } from "react";
-// import {
-//   View,
-//   Text,
-//   StyleSheet,
-//   FlatList,
-//   Pressable,
-//   Modal,
-//   Image,
-//   Dimensions,
-//   StatusBar,
-//   TouchableOpacity,
-//   Platform,
-//   Animated,
-// } from "react-native";
-// import { useNavigation } from "@react-navigation/native";
-// import { Ionicons } from "@expo/vector-icons";
-// import { LinearGradient } from "expo-linear-gradient";
-// import * as Haptics from "expo-haptics";
-
-// import { galleryContent } from "../data/content";
-// import { ScreenContainer } from "../components/common/ScreenContainer";
-// import { SectionHeader } from "../components/common/SectionHeader";
-// import { EmptyState } from "../components/common/EmptyState";
-// import { colors, spacing, typography, shadows } from "../theme";
-// import { useAppSelector } from "../store/hooks";
-
-// const { width, height } = Dimensions.get("window");
-// const HORIZONTAL_PADDING = 16;
-// const GAP = 12;
-// const CARD_WIDTH = (width - HORIZONTAL_PADDING * 2 - GAP) / 2;
-
-// // FNP-Inspired Color Palette
-// const FNP_COLORS = {
-//   primary: "#2E7D32",
-//   primaryLight: "#E8F5E9",
-//   primaryDark: "#1B5E20",
-//   accent: "#FFD700",
-//   gold: "#F57F17",
-//   surface: "#FFFFFF",
-//   text: "#1A1A1A",
-//   textSecondary: "#666666",
-//   textLight: "#999999",
-//   border: "#F0F0F0",
-//   shadow: "rgba(0,0,0,0.08)",
-// };
-
-// const getImageSource = (image) => {
-//   if (!image) return null;
-//   if (typeof image === "string") return { uri: image };
-//   return image;
-// };
-
-// // ✅ NEW: Gallery Card Component (moved outside)
-// const GalleryCard = React.memo(({ item, index, onPress }) => {
-//   const imageSource = getImageSource(item.image);
-//   const scaleAnim = useRef(new Animated.Value(1)).current;
-//   const fadeAnim = useRef(new Animated.Value(0)).current;
-
-//   useEffect(() => {
-//     Animated.timing(fadeAnim, {
-//       toValue: 1,
-//       duration: 400,
-//       delay: index * 60,
-//       useNativeDriver: true,
-//     }).start();
-//   }, []);
-
-//   const handlePressIn = () => {
-//     Animated.spring(scaleAnim, {
-//       toValue: 0.97,
-//       friction: 5,
-//       tension: 50,
-//       useNativeDriver: true,
-//     }).start();
-//   };
-
-//   const handlePressOut = () => {
-//     Animated.spring(scaleAnim, {
-//       toValue: 1,
-//       friction: 5,
-//       tension: 50,
-//       useNativeDriver: true,
-//     }).start();
-//   };
-
-//   const handlePress = () => {
-//     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-//     onPress(item);
-//   };
-
-//   return (
-//     <Animated.View
-//       style={[
-//         styles.cardWrapper,
-//         {
-//           opacity: fadeAnim,
-//           transform: [{ scale: scaleAnim }],
-//         },
-//       ]}
-//     >
-//       <Pressable
-//         android_ripple={{ color: "#E8F5E9", borderless: false, radius: 18 }}
-//         style={styles.card}
-//         onPressIn={handlePressIn}
-//         onPressOut={handlePressOut}
-//         onPress={handlePress}
-//       >
-//         {/* Image Container */}
-//         <View style={styles.imageContainer}>
-//           {imageSource ? (
-//             <Image source={imageSource} style={styles.image} />
-//           ) : (
-//             <View style={styles.noImageBox}>
-//               <Ionicons name="image-outline" size={34} color="#CCC" />
-//               <Text style={styles.noImageText}>No Image</Text>
-//             </View>
-//           )}
-
-//           {/* FNP-Style Badges */}
-//           {item.isNew && (
-//             <View style={styles.newBadge}>
-//               <Text style={styles.badgeText}>NEW</Text>
-//             </View>
-//           )}
-
-//           {item.rating && item.rating > 4.5 && (
-//             <View style={styles.ratingBadge}>
-//               <Ionicons name="star" size={12} color="#FFD700" />
-//               <Text style={styles.ratingText}>{item.rating.toFixed(1)}</Text>
-//             </View>
-//           )}
-
-//           {/* FNP-Style Quick Action Button */}
-//           <TouchableOpacity
-//             style={styles.quickActionBtn}
-//             activeOpacity={0.7}
-//             onPress={(e) => {
-//               e.stopPropagation();
-//               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-//               // Quick action - you can add to cart or wishlist
-//             }}
-//           >
-//             <Ionicons name="heart-outline" size={16} color="#1A1A1A" />
-//           </TouchableOpacity>
-//         </View>
-
-//         {/* FNP-Style Info Box */}
-//         <View style={styles.infoBox}>
-//           <Text style={styles.title} numberOfLines={1}>
-//             {item.title}
-//           </Text>
-
-//           <View style={styles.priceRow}>
-//             {item.price ? (
-//               <Text style={styles.price}>₹{item.price}</Text>
-//             ) : null}
-//             {item.rating && (
-//               <View style={styles.miniRating}>
-//                 <Ionicons name="star" size={10} color="#FFD700" />
-//                 <Text style={styles.miniRatingText}>
-//                   {item.rating.toFixed(1)}
-//                 </Text>
-//               </View>
-//             )}
-//           </View>
-
-//           {/* FNP-Style Category Tag */}
-//           {item.category && item.category !== "Uncategorized" && (
-//             <View style={styles.categoryTag}>
-//               <Text style={styles.categoryTagText}>{item.category}</Text>
-//             </View>
-//           )}
-//         </View>
-//       </Pressable>
-//     </Animated.View>
-//   );
-// });
-
-// // ✅ NEW: Category Chip Component
-// const CategoryChip = React.memo(({ category, isActive, onPress }) => {
-//   return (
-//     <TouchableOpacity
-//       style={[styles.categoryChip, isActive && styles.categoryChipActive]}
-//       activeOpacity={0.7}
-//       onPress={() => {
-//         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-//         onPress(category);
-//       }}
-//     >
-//       <Text
-//         style={[
-//           styles.categoryChipText,
-//           isActive && styles.categoryChipTextActive,
-//         ]}
-//       >
-//         {category}
-//       </Text>
-//       {isActive && <View style={styles.categoryChipDot} />}
-//     </TouchableOpacity>
-//   );
-// });
-
-// export function GalleryScreen() {
-//   const navigation = useNavigation();
-//   const products = useAppSelector((s) => s.products.products);
-//   const [selectedImage, setSelectedImage] = useState(null);
-//   const [selectedCategory, setSelectedCategory] = useState("All");
-//   const scaleAnim = useRef(new Animated.Value(1)).current;
-//   const fadeAnim = useRef(new Animated.Value(0)).current;
-
-//   // FNP-Inspired Categories with Icons
-//   const categories = useMemo(() => {
-//     const allItems =
-//       products?.map((item, index) => ({
-//         id: item._id || item.id || String(index),
-//         title: item.name || `Product ${index + 1}`,
-//         image: item.image || item.imageUrl || item.photo,
-//         price: item.price,
-//         category: item.category || "Uncategorized",
-//         rating: item.rating || 4 + Math.random() * 0.9,
-//         isNew: Math.random() > 0.7,
-//       })) || [];
-
-//     // Extract unique categories
-//     const uniqueCats = [
-//       "All",
-//       ...new Set(allItems.map((item) => item.category).filter(Boolean)),
-//     ];
-//     return { items: allItems, categories: uniqueCats };
-//   }, [products]);
-
-//   const filteredItems = useMemo(() => {
-//     if (selectedCategory === "All") return categories.items;
-//     return categories.items.filter(
-//       (item) => item.category === selectedCategory,
-//     );
-//   }, [categories.items, selectedCategory]);
-
-//   // FNP-Style Animation for modal open
-//   const openModal = (item) => {
-//     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-//     setSelectedImage(item);
-//     Animated.parallel([
-//       Animated.spring(scaleAnim, {
-//         toValue: 1,
-//         friction: 8,
-//         tension: 40,
-//         useNativeDriver: true,
-//       }),
-//       Animated.timing(fadeAnim, {
-//         toValue: 1,
-//         duration: 300,
-//         useNativeDriver: true,
-//       }),
-//     ]).start();
-//   };
-
-//   const closeModal = () => {
-//     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-//     Animated.timing(fadeAnim, {
-//       toValue: 0,
-//       duration: 200,
-//       useNativeDriver: true,
-//     }).start(() => setSelectedImage(null));
-//   };
-
-//   // Handle category selection
-//   const handleCategorySelect = (category) => {
-//     setSelectedCategory(category);
-//   };
-
-//   return (
-//     <ScreenContainer
-//       onMenuPress={() => navigation.openDrawer()}
-//       headerTitle="Gallery"
-//     >
-//       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-
-//       {/* FNP-Style Enhanced Header */}
-//       <View style={styles.headerWrapper}>
-//         <SectionHeader
-//           title={galleryContent.title}
-//           subtitle={galleryContent.subtitle}
-//         />
-
-//         {/* FNP-Style Category Filter Chips */}
-//         {categories.categories.length > 1 && (
-//           <View style={styles.categoryFilterWrapper}>
-//             <FlatList
-//               data={categories.categories}
-//               horizontal
-//               showsHorizontalScrollIndicator={false}
-//               keyExtractor={(item) => item}
-//               contentContainerStyle={styles.categoryFilterList}
-//               renderItem={({ item }) => (
-//                 <CategoryChip
-//                   category={item}
-//                   isActive={item === selectedCategory}
-//                   onPress={handleCategorySelect}
-//                 />
-//               )}
-//             />
-//           </View>
-//         )}
-//       </View>
-
-//       {/* Gallery Grid */}
-//       {filteredItems.length === 0 ? (
-//         <EmptyState
-//           icon="images-outline"
-//           title="No Items Found"
-//           message={galleryContent.emptyMessage}
-//         />
-//       ) : (
-//         <FlatList
-//           data={filteredItems}
-//           keyExtractor={(item) => item.id.toString()}
-//           numColumns={2}
-//           showsVerticalScrollIndicator={false}
-//           contentContainerStyle={styles.listContent}
-//           columnWrapperStyle={styles.row}
-//           renderItem={({ item, index }) => (
-//             <GalleryCard item={item} index={index} onPress={openModal} />
-//           )}
-//         />
-//       )}
-
-//       {/* FNP-Style Premium Modal */}
-//       {selectedImage && (
-//         <Modal
-//           visible={!!selectedImage}
-//           transparent
-//           animationType="fade"
-//           statusBarTranslucent
-//           onRequestClose={closeModal}
-//         >
-//           <Animated.View style={[styles.modalContainer, { opacity: fadeAnim }]}>
-//             <LinearGradient
-//               colors={["rgba(0,0,0,0.95)", "rgba(0,0,0,0.85)"]}
-//               style={styles.modalGradient}
-//             >
-//               {/* FNP-Style Close Button */}
-//               <TouchableOpacity
-//                 style={styles.closeButton}
-//                 onPress={closeModal}
-//                 activeOpacity={0.7}
-//               >
-//                 <View style={styles.closeButtonInner}>
-//                   <Ionicons name="close" size={24} color="#FFFFFF" />
-//                 </View>
-//               </TouchableOpacity>
-
-//               {/* FNP-Style Share Button */}
-//               <TouchableOpacity
-//                 style={styles.shareButton}
-//                 onPress={() => {
-//                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-//                   // Share functionality
-//                 }}
-//                 activeOpacity={0.7}
-//               >
-//                 <View style={styles.shareButtonInner}>
-//                   <Ionicons name="share-outline" size={22} color="#FFFFFF" />
-//                 </View>
-//               </TouchableOpacity>
-
-//               {/* FNP-Style Image Preview */}
-//               <Animated.View
-//                 style={[
-//                   styles.previewBox,
-//                   {
-//                     transform: [{ scale: scaleAnim }],
-//                   },
-//                 ]}
-//               >
-//                 <View style={styles.previewImageWrapper}>
-//                   <Image
-//                     source={getImageSource(selectedImage.image)}
-//                     style={styles.previewImage}
-//                     resizeMode="contain"
-//                   />
-
-//                   {/* FNP-Style Image Counter */}
-//                   <View style={styles.imageCounter}>
-//                     <Ionicons name="image-outline" size={14} color="#FFFFFF" />
-//                     <Text style={styles.imageCounterText}>
-//                       1 / {filteredItems.length}
-//                     </Text>
-//                   </View>
-//                 </View>
-
-//                 {/* FNP-Style Preview Info */}
-//                 <View style={styles.previewInfo}>
-//                   <Text style={styles.previewTitle} numberOfLines={2}>
-//                     {selectedImage.title}
-//                   </Text>
-
-//                   <View style={styles.previewDetails}>
-//                     {selectedImage.price ? (
-//                       <Text style={styles.previewPrice}>
-//                         ₹{selectedImage.price}
-//                       </Text>
-//                     ) : null}
-
-//                     {selectedImage.rating && (
-//                       <View style={styles.previewRating}>
-//                         <Ionicons name="star" size={16} color="#FFD700" />
-//                         <Text style={styles.previewRatingText}>
-//                           {selectedImage.rating.toFixed(1)}
-//                         </Text>
-//                       </View>
-//                     )}
-//                   </View>
-
-//                   {selectedImage.category &&
-//                     selectedImage.category !== "Uncategorized" && (
-//                       <View style={styles.previewCategory}>
-//                         <Text style={styles.previewCategoryText}>
-//                           {selectedImage.category}
-//                         </Text>
-//                       </View>
-//                     )}
-
-//                   {/* FNP-Style Action Buttons */}
-//                   <View style={styles.previewActions}>
-//                     <TouchableOpacity
-//                       style={styles.previewActionBtn}
-//                       activeOpacity={0.7}
-//                       onPress={() => {
-//                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-//                         // View product
-//                       }}
-//                     >
-//                       <LinearGradient
-//                         colors={["#2E7D32", "#1B5E20"]}
-//                         style={styles.previewActionGradient}
-//                       >
-//                         <Text style={styles.previewActionText}>
-//                           View Product
-//                         </Text>
-//                         <Ionicons
-//                           name="arrow-forward"
-//                           size={18}
-//                           color="#FFFFFF"
-//                         />
-//                       </LinearGradient>
-//                     </TouchableOpacity>
-
-//                     <TouchableOpacity
-//                       style={[
-//                         styles.previewActionBtn,
-//                         styles.previewActionSecondary,
-//                       ]}
-//                       activeOpacity={0.7}
-//                       onPress={() => {
-//                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-//                         // Add to wishlist
-//                       }}
-//                     >
-//                       <View style={styles.previewActionSecondaryInner}>
-//                         <Ionicons
-//                           name="heart-outline"
-//                           size={20}
-//                           color="#1A1A1A"
-//                         />
-//                         <Text style={styles.previewActionSecondaryText}>
-//                           Wishlist
-//                         </Text>
-//                       </View>
-//                     </TouchableOpacity>
-//                   </View>
-//                 </View>
-//               </Animated.View>
-//             </LinearGradient>
-//           </Animated.View>
-//         </Modal>
-//       )}
-//     </ScreenContainer>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   // 🏷️ Header Styles
-//   headerWrapper: {
-//     paddingBottom: 8,
-//   },
-
-//   // 🎯 Category Filter Chips (FNP Style)
-//   categoryFilterWrapper: {
-//     paddingVertical: 8,
-//     paddingHorizontal: HORIZONTAL_PADDING,
-//   },
-//   categoryFilterList: {
-//     gap: 10,
-//     paddingRight: HORIZONTAL_PADDING,
-//   },
-//   categoryChip: {
-//     paddingHorizontal: 16,
-//     paddingVertical: 8,
-//     borderRadius: 20,
-//     backgroundColor: "#F5F5F5",
-//     borderWidth: 1,
-//     borderColor: "#E8E8E8",
-//     flexDirection: "row",
-//     alignItems: "center",
-//     gap: 6,
-//   },
-//   categoryChipActive: {
-//     backgroundColor: "#E8F5E9",
-//     borderColor: "#2E7D32",
-//     borderWidth: 2,
-//   },
-//   categoryChipText: {
-//     fontSize: 13,
-//     fontWeight: "600",
-//     color: "#666666",
-//   },
-//   categoryChipTextActive: {
-//     color: "#2E7D32",
-//     fontWeight: "700",
-//   },
-//   categoryChipDot: {
-//     width: 6,
-//     height: 6,
-//     borderRadius: 3,
-//     backgroundColor: "#2E7D32",
-//     marginLeft: 4,
-//   },
-
-//   // 📸 Gallery Grid Styles
-//   listContent: {
-//     paddingHorizontal: HORIZONTAL_PADDING,
-//     paddingBottom: 100,
-//   },
-//   row: {
-//     gap: GAP,
-//     marginBottom: GAP,
-//   },
-//   cardWrapper: {
-//     width: CARD_WIDTH,
-//   },
-//   card: {
-//     backgroundColor: "#FFFFFF",
-//     borderRadius: 16,
-//     overflow: "hidden",
-//     boxShadow: "0px 2px 8px rgba(0,0,0,0.08)",
-//     borderWidth: 1,
-//     borderColor: "#F0F0F0",
-//   },
-//   imageContainer: {
-//     position: "relative",
-//     width: "100%",
-//     height: CARD_WIDTH * 1.2,
-//     backgroundColor: "#F8F8F8",
-//   },
-//   image: {
-//     width: "100%",
-//     height: "100%",
-//     resizeMode: "cover",
-//   },
-//   noImageBox: {
-//     width: "100%",
-//     height: "100%",
-//     justifyContent: "center",
-//     alignItems: "center",
-//     backgroundColor: "#F5F5F5",
-//   },
-//   noImageText: {
-//     marginTop: 6,
-//     color: "#999",
-//     fontSize: 12,
-//     fontWeight: "500",
-//   },
-
-//   // 🏷️ FNP-Style Badges
-//   newBadge: {
-//     position: "absolute",
-//     top: 10,
-//     left: 10,
-//     backgroundColor: "#2E7D32",
-//     paddingHorizontal: 8,
-//     paddingVertical: 3,
-//     borderRadius: 8,
-//   },
-//   badgeText: {
-//     color: "#FFFFFF",
-//     fontSize: 8,
-//     fontWeight: "900",
-//     letterSpacing: 0.5,
-//   },
-//   ratingBadge: {
-//     position: "absolute",
-//     top: 10,
-//     left: 10,
-//     backgroundColor: "rgba(0,0,0,0.7)",
-//     paddingHorizontal: 8,
-//     paddingVertical: 4,
-//     borderRadius: 12,
-//     flexDirection: "row",
-//     alignItems: "center",
-//     gap: 4,
-//   },
-//   ratingText: {
-//     color: "#FFFFFF",
-//     fontSize: 10,
-//     fontWeight: "700",
-//   },
-//   quickActionBtn: {
-//     position: "absolute",
-//     bottom: 10,
-//     right: 10,
-//     width: 32,
-//     height: 32,
-//     borderRadius: 16,
-//     backgroundColor: "rgba(255,255,255,0.95)",
-//     alignItems: "center",
-//     justifyContent: "center",
-//     boxShadow: "0px 2px 4px rgba(0,0,0,0.1)",
-//   },
-
-//   // 📝 Info Box Styles
-//   infoBox: {
-//     padding: 12,
-//     backgroundColor: "#FFFFFF",
-//   },
-//   title: {
-//     color: "#1A1A1A",
-//     fontSize: 13,
-//     fontWeight: "700",
-//     marginBottom: 4,
-//   },
-//   priceRow: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     justifyContent: "space-between",
-//     marginBottom: 4,
-//   },
-//   price: {
-//     color: "#2E7D32",
-//     fontSize: 14,
-//     fontWeight: "800",
-//   },
-//   miniRating: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     gap: 2,
-//     backgroundColor: "#FFF8E1",
-//     paddingHorizontal: 6,
-//     paddingVertical: 2,
-//     borderRadius: 6,
-//   },
-//   miniRatingText: {
-//     fontSize: 9,
-//     fontWeight: "700",
-//     color: "#F57F17",
-//   },
-//   categoryTag: {
-//     alignSelf: "flex-start",
-//     backgroundColor: "#F5F5F5",
-//     paddingHorizontal: 8,
-//     paddingVertical: 2,
-//     borderRadius: 6,
-//   },
-//   categoryTagText: {
-//     fontSize: 8,
-//     color: "#999",
-//     fontWeight: "600",
-//     textTransform: "uppercase",
-//   },
-
-//   // 🎨 FNP-Style Premium Modal
-//   modalContainer: {
-//     flex: 1,
-//     justifyContent: "center",
-//     alignItems: "center",
-//   },
-//   modalGradient: {
-//     flex: 1,
-//     width: "100%",
-//     justifyContent: "center",
-//     alignItems: "center",
-//     paddingHorizontal: 20,
-//   },
-//   closeButton: {
-//     position: "absolute",
-//     top: Platform.OS === "ios" ? 50 : 40,
-//     right: 20,
-//     zIndex: 20,
-//   },
-//   closeButtonInner: {
-//     width: 44,
-//     height: 44,
-//     borderRadius: 22,
-//     backgroundColor: "rgba(255,255,255,0.15)",
-//     alignItems: "center",
-//     justifyContent: "center",
-//     borderWidth: 1,
-//     borderColor: "rgba(255,255,255,0.1)",
-//   },
-//   shareButton: {
-//     position: "absolute",
-//     top: Platform.OS === "ios" ? 50 : 40,
-//     right: 76,
-//     zIndex: 20,
-//   },
-//   shareButtonInner: {
-//     width: 44,
-//     height: 44,
-//     borderRadius: 22,
-//     backgroundColor: "rgba(255,255,255,0.15)",
-//     alignItems: "center",
-//     justifyContent: "center",
-//     borderWidth: 1,
-//     borderColor: "rgba(255,255,255,0.1)",
-//   },
-//   previewBox: {
-//     width: "100%",
-//     maxWidth: 500,
-//     alignItems: "center",
-//   },
-//   previewImageWrapper: {
-//     width: "100%",
-//     height: height * 0.5,
-//     borderRadius: 20,
-//     overflow: "hidden",
-//     backgroundColor: "rgba(255,255,255,0.05)",
-//     position: "relative",
-//   },
-//   previewImage: {
-//     width: "100%",
-//     height: "100%",
-//   },
-//   imageCounter: {
-//     position: "absolute",
-//     bottom: 12,
-//     right: 12,
-//     backgroundColor: "rgba(0,0,0,0.6)",
-//     paddingHorizontal: 12,
-//     paddingVertical: 6,
-//     borderRadius: 12,
-//     flexDirection: "row",
-//     alignItems: "center",
-//     gap: 6,
-//   },
-//   imageCounterText: {
-//     color: "#FFFFFF",
-//     fontSize: 11,
-//     fontWeight: "600",
-//   },
-
-//   // 📝 Preview Info Styles
-//   previewInfo: {
-//     width: "100%",
-//     marginTop: 20,
-//     paddingHorizontal: 4,
-//   },
-//   previewTitle: {
-//     color: "#FFFFFF",
-//     fontSize: 20,
-//     fontWeight: "800",
-//     textAlign: "center",
-//   },
-//   previewDetails: {
-//     flexDirection: "row",
-//     justifyContent: "center",
-//     alignItems: "center",
-//     gap: 16,
-//     marginTop: 8,
-//   },
-//   previewPrice: {
-//     color: "#81C784",
-//     fontSize: 18,
-//     fontWeight: "800",
-//   },
-//   previewRating: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     gap: 4,
-//     backgroundColor: "rgba(255,215,0,0.15)",
-//     paddingHorizontal: 10,
-//     paddingVertical: 4,
-//     borderRadius: 12,
-//   },
-//   previewRatingText: {
-//     color: "#FFD700",
-//     fontSize: 14,
-//     fontWeight: "700",
-//   },
-//   previewCategory: {
-//     alignSelf: "center",
-//     marginTop: 8,
-//     backgroundColor: "rgba(255,255,255,0.1)",
-//     paddingHorizontal: 12,
-//     paddingVertical: 4,
-//     borderRadius: 12,
-//   },
-//   previewCategoryText: {
-//     color: "rgba(255,255,255,0.7)",
-//     fontSize: 11,
-//     fontWeight: "600",
-//     textTransform: "uppercase",
-//   },
-
-//   // 🎯 Action Buttons
-//   previewActions: {
-//     flexDirection: "row",
-//     gap: 12,
-//     marginTop: 16,
-//     width: "100%",
-//     paddingHorizontal: 4,
-//   },
-//   previewActionBtn: {
-//     flex: 1,
-//     height: 52,
-//     borderRadius: 14,
-//     overflow: "hidden",
-//   },
-//   previewActionGradient: {
-//     flex: 1,
-//     flexDirection: "row",
-//     alignItems: "center",
-//     justifyContent: "center",
-//     gap: 8,
-//   },
-//   previewActionText: {
-//     color: "#FFFFFF",
-//     fontSize: 14,
-//     fontWeight: "800",
-//   },
-//   previewActionSecondary: {
-//     flex: 0.5,
-//     backgroundColor: "#FFFFFF",
-//     borderWidth: 1,
-//     borderColor: "#E8E8E8",
-//   },
-//   previewActionSecondaryInner: {
-//     flex: 1,
-//     flexDirection: "row",
-//     alignItems: "center",
-//     justifyContent: "center",
-//     gap: 6,
-//   },
-//   previewActionSecondaryText: {
-//     color: "#1A1A1A",
-//     fontSize: 13,
-//     fontWeight: "700",
-//   },
-// });
+// src/screens/GalleryScreen.jsx
+// Green Fibre — Gallery Showcase Screen
 
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import {
@@ -862,9 +15,9 @@ import {
   TouchableOpacity,
   Platform,
   Animated,
-  SafeAreaView,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation, DrawerActions } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
@@ -880,21 +33,6 @@ const HORIZONTAL_PADDING = 16;
 const GAP = 12;
 const CARD_WIDTH = (width - HORIZONTAL_PADDING * 2 - GAP) / 2;
 
-// Color Palette
-const COLORS = {
-  primary: "#2E7D32",
-  primaryLight: "#E8F5E9",
-  primaryDark: "#1B5E20",
-  accent: "#FFD700",
-  gold: "#F57F17",
-  surface: "#FFFFFF",
-  text: "#1A1A1A",
-  textSecondary: "#666666",
-  textLight: "#999999",
-  border: "#F0F0F0",
-  shadow: "rgba(0,0,0,0.08)",
-};
-
 const getImageSource = (image) => {
   if (!image) return null;
   if (typeof image === "string") return { uri: image };
@@ -904,78 +42,52 @@ const getImageSource = (image) => {
 // Gallery Card Component
 const GalleryCard = React.memo(({ item, index, onPress }) => {
   const imageSource = getImageSource(item.image);
-  const scaleAnim = useRef(new Animated.Value(1)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 400,
-      delay: index * 60,
+      delay: Math.min(index * 50, 400),
       useNativeDriver: true,
     }).start();
   }, []);
 
-  const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 0.97,
-      friction: 5,
-      tension: 50,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      friction: 5,
-      tension: 50,
-      useNativeDriver: true,
-    }).start();
-  };
-
   const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (_) {}
     onPress(item);
   };
 
   return (
-    <Animated.View
-      style={[
-        styles.cardWrapper,
-        {
-          opacity: fadeAnim,
-          transform: [{ scale: scaleAnim }],
-        },
-      ]}
-    >
+    <Animated.View style={[styles.cardWrapper, { opacity: fadeAnim }]}>
       <Pressable
-        android_ripple={{ color: "#E8F5E9", borderless: false, radius: 18 }}
         style={styles.card}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
         onPress={handlePress}
+        android_ripple={{ color: "rgba(0,0,0,0.05)" }}
       >
         <View style={styles.imageContainer}>
           {imageSource ? (
-            <Image source={imageSource} style={styles.image} />
+            <Image
+              source={imageSource}
+              style={styles.cardImage}
+              resizeMode="cover"
+            />
           ) : (
-            <View style={styles.noImageBox}>
-              <Ionicons name="image-outline" size={34} color="#CCC" />
-              <Text style={styles.noImageText}>No Image</Text>
+            <View style={[styles.cardImage, styles.placeholderImage]}>
+              <Ionicons name="image-outline" size={32} color={colors.textLight || "#999"} />
             </View>
           )}
 
-          {item.isNew && (
-            <View style={styles.newBadge}>
-              <Text style={styles.badgeText}>NEW</Text>
-            </View>
-          )}
+          <LinearGradient
+            colors={["transparent", "rgba(0,0,0,0.6)"]}
+            style={styles.imageGradient}
+          />
 
-          {item.rating && item.rating > 4.5 && (
-            <View style={styles.ratingBadge}>
-              <Ionicons name="star" size={12} color="#FFD700" />
-              <Text style={styles.ratingText}>{item.rating.toFixed(1)}</Text>
+          {item.badge && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{item.badge}</Text>
             </View>
           )}
 
@@ -984,7 +96,9 @@ const GalleryCard = React.memo(({ item, index, onPress }) => {
             activeOpacity={0.7}
             onPress={(e) => {
               e.stopPropagation();
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              try {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              } catch (_) {}
             }}
           >
             <Ionicons name="heart-outline" size={16} color="#1A1A1A" />
@@ -1004,7 +118,7 @@ const GalleryCard = React.memo(({ item, index, onPress }) => {
               <View style={styles.miniRating}>
                 <Ionicons name="star" size={10} color="#FFD700" />
                 <Text style={styles.miniRatingText}>
-                  {item.rating.toFixed(1)}
+                  {Number(item.rating).toFixed(1)}
                 </Text>
               </View>
             )}
@@ -1028,7 +142,9 @@ const CategoryChip = React.memo(({ category, isActive, onPress }) => {
       style={[styles.categoryChip, isActive && styles.categoryChipActive]}
       activeOpacity={0.7}
       onPress={() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        try {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        } catch (_) {}
         onPress(category);
       }}
     >
@@ -1048,85 +164,147 @@ const CategoryChip = React.memo(({ category, isActive, onPress }) => {
 export function GalleryScreen() {
   const navigation = useNavigation();
   const products = useAppSelector((s) => s.products.products);
-  const [selectedImage, setSelectedImage] = useState(null);
+
+  const [selectedItem, setSelectedItem] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const [modalVisible, setModalVisible] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
 
-  // Process products data
-  const categories = useMemo(() => {
-    const allItems =
-      products?.map((item, index) => ({
-        id: item._id || item.id || String(index),
-        title: item.name || `Product ${index + 1}`,
-        image: item.image || item.imageUrl || item.photo,
-        price: item.price,
-        category: item.category || "Uncategorized",
-        rating: item.rating || 4 + Math.random() * 0.9,
-        isNew: Math.random() > 0.7,
-      })) || [];
+  const modalScale = useRef(new Animated.Value(0.9)).current;
+  const modalOpacity = useRef(new Animated.Value(0)).current;
 
-    const uniqueCats = [
-      "All",
-      ...new Set(allItems.map((item) => item.category).filter(Boolean)),
-    ];
-    return { items: allItems, categories: uniqueCats };
+  // Merge API products with static items
+  const allItems = useMemo(() => {
+    const staticItems = galleryContent?.items || [];
+    const apiItems = (products || []).map((p) => ({
+      id: p._id || p.id,
+      title: p.name || p.title,
+      category: p.category?.name || p.category || "Crafts",
+      image: p.images?.[0]?.url || p.image || p.images?.[0],
+      price: p.price,
+      rating: p.rating || 4.8,
+      badge: p.isFeatured ? "Featured" : p.badge || null,
+      description: p.description,
+      tags: p.tags || ["Eco-friendly", "Handmade"],
+    }));
+
+    const combined = [...apiItems, ...staticItems];
+    const seen = new Set();
+    return combined.filter((item) => {
+      const key = item.id || item.title;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }, [products]);
 
-  const filteredItems = useMemo(() => {
-    if (selectedCategory === "All") return categories.items;
-    return categories.items.filter(
-      (item) => item.category === selectedCategory,
-    );
-  }, [categories.items, selectedCategory]);
+  // Extract categories
+  const categories = useMemo(() => {
+    const cats = new Set(["All"]);
+    allItems.forEach((item) => {
+      if (item.category) cats.add(item.category);
+    });
+    return Array.from(cats);
+  }, [allItems]);
 
-  const openModal = (item) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedImage(item);
+  // Filtered items
+  const filteredItems = useMemo(() => {
+    if (selectedCategory === "All") return allItems;
+    return allItems.filter((item) => item.category === selectedCategory);
+  }, [allItems, selectedCategory]);
+
+  const handleCategorySelect = (category) => {
+    setSelectedCategory(category);
+  };
+
+  const handleCardPress = (item) => {
+    setSelectedItem(item);
+    setIsLiked(false);
+    setModalVisible(true);
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch (_) {}
+
     Animated.parallel([
-      Animated.spring(scaleAnim, {
+      Animated.spring(modalScale, {
         toValue: 1,
         friction: 8,
         tension: 40,
         useNativeDriver: true,
       }),
-      Animated.timing(fadeAnim, {
+      Animated.timing(modalOpacity, {
         toValue: 1,
-        duration: 300,
+        duration: 250,
         useNativeDriver: true,
       }),
     ]).start();
   };
 
   const closeModal = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Animated.timing(fadeAnim, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: true,
-    }).start(() => setSelectedImage(null));
+    Animated.parallel([
+      Animated.timing(modalScale, {
+        toValue: 0.9,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(modalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setModalVisible(false);
+      setSelectedItem(null);
+    });
   };
 
-  const handleCategorySelect = (category) => {
-    setSelectedCategory(category);
+  const toggleLike = () => {
+    setIsLiked(!isLiked);
+    try {
+      Haptics.notificationAsync(
+        !isLiked
+          ? Haptics.NotificationFeedbackType.Success
+          : Haptics.NotificationFeedbackType.Warning
+      );
+    } catch (_) {}
+  };
+
+  const handleShopNow = () => {
+    closeModal();
+    if (selectedItem?.id) {
+      navigation.navigate("ProductDetails", { id: selectedItem.id });
+    } else {
+      navigation.navigate("Main", { screen: "Tabs", params: { screen: "Shop" } });
+    }
   };
 
   // Render Header Component
   const renderHeader = () => (
-    <View style={styles.headerWrapper}>
-      <SectionHeader
-        title={galleryContent.title}
-        subtitle={galleryContent.subtitle}
-      />
+    <View style={styles.headerContainer}>
+      <LinearGradient
+        colors={[colors.primaryDark || "#122E1A", colors.primary || "#1C4A2A"]}
+        style={styles.heroBanner}
+      >
+        <View style={styles.heroContent}>
+          <View style={styles.heroBadge}>
+            <Ionicons name="sparkles" size={12} color="#D4A843" />
+            <Text style={styles.heroBadgeText}>SUSTAINABLE GALLERY</Text>
+          </View>
+          <Text style={styles.heroTitle}>{galleryContent?.title || "Crafted with Care"}</Text>
+          <Text style={styles.heroSubtitle}>
+            {galleryContent?.subtitle || "Explore our gallery of handcrafted, eco-friendly creations."}
+          </Text>
+        </View>
+      </LinearGradient>
 
-      {categories.categories.length > 1 && (
-        <View style={styles.categoryFilterWrapper}>
+      {categories.length > 1 && (
+        <View style={styles.categoryContainer}>
           <FlatList
-            data={categories.categories}
             horizontal
             showsHorizontalScrollIndicator={false}
+            data={categories}
             keyExtractor={(item) => item}
-            contentContainerStyle={styles.categoryFilterList}
+            contentContainerStyle={styles.categoryList}
             renderItem={({ item }) => (
               <CategoryChip
                 category={item}
@@ -1140,197 +318,155 @@ export function GalleryScreen() {
     </View>
   );
 
-  // Render Empty State
   const renderEmpty = () => (
     <EmptyState
       icon="images-outline"
       title="No Items Found"
-      message={galleryContent.emptyMessage}
+      message={galleryContent?.emptyMessage || "No gallery items found."}
     />
   );
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content" backgroundColor="#FAF7F2" />
 
       {/* Custom Header */}
       <View style={styles.customHeader}>
         <TouchableOpacity
           style={styles.menuButton}
-          onPress={() => navigation.openDrawer()}
+          onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
           activeOpacity={0.7}
+          accessibilityLabel="Open menu"
         >
-          <Ionicons name="menu-outline" size={28} color="#1A1A1A" />
+          <Ionicons name="menu-outline" size={24} color="#1A1A1A" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Gallery</Text>
         <View style={styles.headerRight} />
       </View>
 
-      {/* Main FlatList - No nested ScrollView */}
+      {/* Main FlatList */}
       <FlatList
         data={filteredItems}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => String(item.id)}
         numColumns={2}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
-        columnWrapperStyle={styles.row}
+        columnWrapperStyle={styles.columnWrapper}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmpty}
         renderItem={({ item, index }) => (
-          <GalleryCard item={item} index={index} onPress={openModal} />
+          <GalleryCard item={item} index={index} onPress={handleCardPress} />
         )}
-        // Performance optimizations
-        removeClippedSubviews={true}
-        maxToRenderPerBatch={10}
-        windowSize={10}
-        initialNumToRender={6}
-        updateCellsBatchingPeriod={50}
       />
 
-      {/* Modal */}
-      {selectedImage && (
-        <Modal
-          visible={!!selectedImage}
-          transparent
-          animationType="fade"
-          statusBarTranslucent
-          onRequestClose={closeModal}
-        >
-          <Animated.View style={[styles.modalContainer, { opacity: fadeAnim }]}>
-            <LinearGradient
-              colors={["rgba(0,0,0,0.95)", "rgba(0,0,0,0.85)"]}
-              style={styles.modalGradient}
-            >
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={closeModal}
-                activeOpacity={0.7}
-              >
-                <View style={styles.closeButtonInner}>
-                  <Ionicons name="close" size={24} color="#FFFFFF" />
-                </View>
+      {/* Preview Modal */}
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="none"
+        onRequestClose={closeModal}
+      >
+        <Pressable style={styles.modalOverlay} onPress={closeModal}>
+          <Animated.View
+            style={[
+              styles.previewContainer,
+              {
+                transform: [{ scale: modalScale }],
+                opacity: modalOpacity,
+              },
+            ]}
+          >
+            <Pressable style={styles.previewContent} onPress={(e) => e.stopPropagation()}>
+              <TouchableOpacity style={styles.closeBtn} onPress={closeModal}>
+                <Ionicons name="close" size={20} color="#FFFFFF" />
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.shareButton}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                }}
-                activeOpacity={0.7}
+                style={[styles.likeBtn, isLiked && styles.likeBtnActive]}
+                onPress={toggleLike}
               >
-                <View style={styles.shareButtonInner}>
-                  <Ionicons name="share-outline" size={22} color="#FFFFFF" />
-                </View>
+                <Ionicons
+                  name={isLiked ? "heart" : "heart-outline"}
+                  size={22}
+                  color={isLiked ? "#E53935" : "#FFFFFF"}
+                />
               </TouchableOpacity>
 
-              <Animated.View
-                style={[
-                  styles.previewBox,
-                  {
-                    transform: [{ scale: scaleAnim }],
-                  },
-                ]}
-              >
-                <View style={styles.previewImageWrapper}>
-                  <Image
-                    source={getImageSource(selectedImage.image)}
-                    style={styles.previewImage}
-                    resizeMode="contain"
-                  />
+              <View style={styles.previewImageContainer}>
+                <Image
+                  source={getImageSource(selectedItem?.image)}
+                  style={styles.previewImage}
+                  resizeMode="cover"
+                />
+                <LinearGradient
+                  colors={["transparent", "rgba(0,0,0,0.85)"]}
+                  style={styles.previewGradient}
+                />
+              </View>
 
-                  <View style={styles.imageCounter}>
-                    <Ionicons name="image-outline" size={14} color="#FFFFFF" />
-                    <Text style={styles.imageCounterText}>
-                      1 / {filteredItems.length}
+              <View style={styles.previewDetails}>
+                <View style={styles.previewHeaderRow}>
+                  <View style={styles.previewCategory}>
+                    <Text style={styles.previewCategoryText}>
+                      {selectedItem?.category || "Handcrafted"}
                     </Text>
                   </View>
-                </View>
-
-                <View style={styles.previewInfo}>
-                  <Text style={styles.previewTitle} numberOfLines={2}>
-                    {selectedImage.title}
-                  </Text>
-
-                  <View style={styles.previewDetails}>
-                    {selectedImage.price ? (
-                      <Text style={styles.previewPrice}>
-                        ₹{selectedImage.price}
+                  {selectedItem?.rating && (
+                    <View style={styles.previewRating}>
+                      <Ionicons name="star" size={14} color="#FFD700" />
+                      <Text style={styles.previewRatingText}>
+                        {Number(selectedItem.rating).toFixed(1)}
                       </Text>
-                    ) : null}
-
-                    {selectedImage.rating && (
-                      <View style={styles.previewRating}>
-                        <Ionicons name="star" size={16} color="#FFD700" />
-                        <Text style={styles.previewRatingText}>
-                          {selectedImage.rating.toFixed(1)}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-
-                  {selectedImage.category &&
-                    selectedImage.category !== "Uncategorized" && (
-                      <View style={styles.previewCategory}>
-                        <Text style={styles.previewCategoryText}>
-                          {selectedImage.category}
-                        </Text>
-                      </View>
-                    )}
-
-                  <View style={styles.previewActions}>
-                    <TouchableOpacity
-                      style={styles.previewActionBtn}
-                      activeOpacity={0.7}
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                        navigation.navigate("ProductDetails", {
-                          productId: selectedImage.id,
-                        });
-                      }}
-                    >
-                      <LinearGradient
-                        colors={["#2E7D32", "#1B5E20"]}
-                        style={styles.previewActionGradient}
-                      >
-                        <Text style={styles.previewActionText}>
-                          View Product
-                        </Text>
-                        <Ionicons
-                          name="arrow-forward"
-                          size={18}
-                          color="#FFFFFF"
-                        />
-                      </LinearGradient>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={[
-                        styles.previewActionBtn,
-                        styles.previewActionSecondary,
-                      ]}
-                      activeOpacity={0.7}
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      }}
-                    >
-                      <View style={styles.previewActionSecondaryInner}>
-                        <Ionicons
-                          name="heart-outline"
-                          size={20}
-                          color="#1A1A1A"
-                        />
-                        <Text style={styles.previewActionSecondaryText}>
-                          Wishlist
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  </View>
+                    </View>
+                  )}
                 </View>
-              </Animated.View>
-            </LinearGradient>
+
+                <Text style={styles.previewTitle}>{selectedItem?.title}</Text>
+
+                {selectedItem?.description && (
+                  <Text style={styles.previewDesc} numberOfLines={3}>
+                    {selectedItem.description}
+                  </Text>
+                )}
+
+                {selectedItem?.tags && (
+                  <View style={styles.previewTags}>
+                    {selectedItem.tags.map((tag, i) => (
+                      <View key={i} style={styles.previewTag}>
+                        <Ionicons name="leaf" size={10} color={colors.primary || "#1C4A2A"} />
+                        <Text style={styles.previewTagText}>{tag}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                <View style={styles.previewFooter}>
+                  <View>
+                    <Text style={styles.previewPriceLabel}>Price</Text>
+                    <Text style={styles.previewPrice}>
+                      {selectedItem?.price ? `₹${selectedItem.price}` : "Custom Craft"}
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.previewActionBtn}
+                    activeOpacity={0.8}
+                    onPress={handleShopNow}
+                  >
+                    <LinearGradient
+                      colors={[colors.primary || "#1C4A2A", colors.primaryDark || "#122E1A"]}
+                      style={styles.previewActionGradient}
+                    >
+                      <Text style={styles.previewActionText}>View Details</Text>
+                      <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Pressable>
           </Animated.View>
-        </Modal>
-      )}
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1338,87 +474,118 @@ export function GalleryScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.cream || "#FAF7F2",
   },
-
-  // Custom Header
   customHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === "ios" ? 12 : 16,
-    paddingBottom: 8,
-    backgroundColor: "#FFFFFF",
+    paddingHorizontal: spacing.screen || 16,
+    height: 52,
+    backgroundColor: colors.cream || "#FAF7F2",
     borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
+    borderBottomColor: colors.border || "#EFEFEF",
   },
   menuButton: {
-    padding: 4,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.creamDark || "#EDE8DF",
   },
   headerTitle: {
+    fontFamily: "DMSans_600SemiBold",
     fontSize: 18,
-    fontWeight: "700",
-    color: "#1A1A1A",
+    color: colors.text || "#1A1A1A",
   },
   headerRight: {
     width: 36,
   },
-
-  // Header Wrapper
-  headerWrapper: {
-    paddingBottom: 8,
+  headerContainer: {
+    marginBottom: 16,
+    paddingTop: 8,
   },
-
-  // Category Filter Chips
-  categoryFilterWrapper: {
-    paddingVertical: 8,
-    paddingHorizontal: HORIZONTAL_PADDING,
+  heroBanner: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    marginHorizontal: HORIZONTAL_PADDING,
   },
-  categoryFilterList: {
-    gap: 10,
-    paddingRight: HORIZONTAL_PADDING,
+  heroContent: {
+    alignItems: "flex-start",
   },
-  categoryChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "#F5F5F5",
-    borderWidth: 1,
-    borderColor: "#E8E8E8",
+  heroBadge: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.18)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+    marginBottom: 8,
+  },
+  heroBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 9,
+    fontFamily: "DMMono_500Medium",
+    letterSpacing: 0.5,
+  },
+  heroTitle: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontFamily: "PlayfairDisplay_700Bold",
+    marginBottom: 4,
+  },
+  heroSubtitle: {
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 12,
+    lineHeight: 16,
+    fontFamily: "DMSans_400Regular",
+  },
+  categoryContainer: {
+    marginBottom: 4,
+  },
+  categoryList: {
+    paddingHorizontal: HORIZONTAL_PADDING,
+    gap: 8,
+  },
+  categoryChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: colors.creamDark || "#EDE8DF",
+    borderWidth: 1,
+    borderColor: colors.border || "#EAEAEA",
     gap: 6,
   },
   categoryChipActive: {
-    backgroundColor: "#E8F5E9",
-    borderColor: "#2E7D32",
-    borderWidth: 2,
+    backgroundColor: colors.primarySurface || "#E8F5E9",
+    borderColor: colors.primary || "#1C4A2A",
   },
   categoryChipText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#666666",
+    fontSize: 12,
+    fontFamily: "DMSans_500Medium",
+    color: colors.textSecondary || "#666666",
   },
   categoryChipTextActive: {
-    color: "#2E7D32",
-    fontWeight: "700",
+    color: colors.primaryDark || "#122E1A",
+    fontFamily: "DMSans_700Bold",
   },
   categoryChipDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#2E7D32",
-    marginLeft: 4,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: colors.primary || "#1C4A2A",
   },
-
-  // Gallery Grid
   listContent: {
-    paddingHorizontal: HORIZONTAL_PADDING,
-    paddingBottom: 100,
+    paddingBottom: 32,
   },
-  row: {
-    gap: GAP,
+  columnWrapper: {
+    paddingHorizontal: HORIZONTAL_PADDING,
+    justifyContent: "space-between",
     marginBottom: GAP,
   },
   cardWrapper: {
@@ -1426,96 +593,70 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    borderRadius: 14,
     overflow: "hidden",
-    shadowColor: "rgba(0,0,0,0.08)",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 3,
     borderWidth: 1,
-    borderColor: "#F0F0F0",
+    borderColor: colors.border || "#EFEFEF",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
   },
   imageContainer: {
-    position: "relative",
     width: "100%",
-    height: CARD_WIDTH * 1.2,
+    height: CARD_WIDTH * 1.05,
+    position: "relative",
     backgroundColor: "#F8F8F8",
   },
-  image: {
+  cardImage: {
     width: "100%",
     height: "100%",
-    resizeMode: "cover",
   },
-  noImageBox: {
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
+  placeholderImage: {
     alignItems: "center",
-    backgroundColor: "#F5F5F5",
+    justifyContent: "center",
+    backgroundColor: "#F0F0F0",
   },
-  noImageText: {
-    marginTop: 6,
-    color: "#999",
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  newBadge: {
+  imageGradient: {
     position: "absolute",
-    top: 10,
-    left: 10,
-    backgroundColor: "#2E7D32",
-    paddingHorizontal: 8,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 40,
+  },
+  badge: {
+    position: "absolute",
+    top: 8,
+    left: 8,
+    backgroundColor: "rgba(0,0,0,0.65)",
+    paddingHorizontal: 7,
     paddingVertical: 3,
-    borderRadius: 8,
+    borderRadius: 6,
   },
   badgeText: {
     color: "#FFFFFF",
-    fontSize: 8,
-    fontWeight: "900",
-    letterSpacing: 0.5,
-  },
-  ratingBadge: {
-    position: "absolute",
-    top: 10,
-    left: 10,
-    backgroundColor: "rgba(0,0,0,0.7)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  ratingText: {
-    color: "#FFFFFF",
-    fontSize: 10,
-    fontWeight: "700",
+    fontSize: 9,
+    fontFamily: "DMSans_700Bold",
   },
   quickActionBtn: {
     position: "absolute",
-    bottom: 10,
-    right: 10,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.95)",
+    top: 8,
+    right: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.9)",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "rgba(0,0,0,0.1)",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   infoBox: {
-    padding: 12,
-    backgroundColor: "#FFFFFF",
+    padding: 10,
   },
   title: {
-    color: "#1A1A1A",
     fontSize: 13,
-    fontWeight: "700",
+    fontFamily: "DMSans_600SemiBold",
+    color: colors.text || "#1A1A1A",
     marginBottom: 4,
   },
   priceRow: {
@@ -1525,209 +666,194 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   price: {
-    color: "#2E7D32",
-    fontSize: 14,
-    fontWeight: "800",
+    fontSize: 13,
+    fontFamily: "DMSans_700Bold",
+    color: colors.primary || "#1C4A2A",
   },
   miniRating: {
     flexDirection: "row",
     alignItems: "center",
     gap: 2,
-    backgroundColor: "#FFF8E1",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
   },
   miniRatingText: {
-    fontSize: 9,
-    fontWeight: "700",
-    color: "#F57F17",
+    fontSize: 10,
+    fontFamily: "DMSans_600SemiBold",
+    color: colors.textSecondary || "#666666",
   },
   categoryTag: {
     alignSelf: "flex-start",
-    backgroundColor: "#F5F5F5",
-    paddingHorizontal: 8,
+    backgroundColor: colors.creamDark || "#F5F5F5",
+    paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 6,
+    borderRadius: 4,
   },
   categoryTagText: {
-    fontSize: 8,
-    color: "#999",
-    fontWeight: "600",
-    textTransform: "uppercase",
+    fontSize: 9,
+    color: colors.textSecondary || "#777777",
+    fontFamily: "DMSans_500Medium",
   },
-
-  // Modal Styles
-  modalContainer: {
+  modalOverlay: {
     flex: 1,
+    backgroundColor: "rgba(0,0,0,0.75)",
     justifyContent: "center",
     alignItems: "center",
+    padding: 20,
   },
-  modalGradient: {
-    flex: 1,
+  previewContainer: {
     width: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  closeButton: {
-    position: "absolute",
-    top: Platform.OS === "ios" ? 50 : 40,
-    right: 20,
-    zIndex: 20,
-  },
-  closeButtonInner: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-  },
-  shareButton: {
-    position: "absolute",
-    top: Platform.OS === "ios" ? 50 : 40,
-    right: 76,
-    zIndex: 20,
-  },
-  shareButtonInner: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-  },
-  previewBox: {
-    width: "100%",
-    maxWidth: 500,
-    alignItems: "center",
-  },
-  previewImageWrapper: {
-    width: "100%",
-    height: height * 0.5,
+    maxWidth: 360,
+    backgroundColor: "#FFFFFF",
     borderRadius: 20,
     overflow: "hidden",
-    backgroundColor: "rgba(255,255,255,0.05)",
+    elevation: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+  },
+  previewContent: {
     position: "relative",
+  },
+  closeBtn: {
+    position: "absolute",
+    top: 14,
+    right: 14,
+    zIndex: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  likeBtn: {
+    position: "absolute",
+    top: 14,
+    left: 14,
+    zIndex: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  likeBtnActive: {
+    backgroundColor: "rgba(255,255,255,0.9)",
+  },
+  previewImageContainer: {
+    width: "100%",
+    height: 280,
+    position: "relative",
+    backgroundColor: "#1A1A1A",
   },
   previewImage: {
     width: "100%",
     height: "100%",
   },
-  imageCounter: {
+  previewGradient: {
     position: "absolute",
-    bottom: 12,
-    right: 12,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  imageCounterText: {
-    color: "#FFFFFF",
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  previewInfo: {
-    width: "100%",
-    marginTop: 20,
-    paddingHorizontal: 4,
-  },
-  previewTitle: {
-    color: "#FFFFFF",
-    fontSize: 20,
-    fontWeight: "800",
-    textAlign: "center",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 80,
   },
   previewDetails: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 16,
-    marginTop: 8,
+    padding: 18,
   },
-  previewPrice: {
-    color: "#81C784",
-    fontSize: 18,
-    fontWeight: "800",
+  previewHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  previewCategory: {
+    backgroundColor: colors.primarySurface || "#E8F5E9",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  previewCategoryText: {
+    fontSize: 11,
+    color: colors.primaryDark || "#122E1A",
+    fontFamily: "DMSans_700Bold",
   },
   previewRating: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(255,215,0,0.15)",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    gap: 3,
   },
   previewRatingText: {
-    color: "#FFD700",
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: 12,
+    fontFamily: "DMSans_700Bold",
+    color: "#1A1A1A",
   },
-  previewCategory: {
-    alignSelf: "center",
-    marginTop: 8,
-    backgroundColor: "rgba(255,255,255,0.1)",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+  previewTitle: {
+    fontSize: 18,
+    fontFamily: "PlayfairDisplay_700Bold",
+    color: "#1A1A1A",
+    marginBottom: 6,
   },
-  previewCategoryText: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 11,
-    fontWeight: "600",
-    textTransform: "uppercase",
+  previewDesc: {
+    fontSize: 12,
+    color: colors.textSecondary || "#666666",
+    lineHeight: 17,
+    fontFamily: "DMSans_400Regular",
+    marginBottom: 10,
   },
-  previewActions: {
+  previewTags: {
     flexDirection: "row",
-    gap: 12,
-    marginTop: 16,
-    width: "100%",
-    paddingHorizontal: 4,
+    flexWrap: "wrap",
+    gap: 6,
+    marginBottom: 16,
+  },
+  previewTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.creamDark || "#F5F5F5",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4,
+  },
+  previewTagText: {
+    fontSize: 10,
+    color: colors.textSecondary || "#555555",
+    fontFamily: "DMSans_500Medium",
+  },
+  previewFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border || "#F0F0F0",
+  },
+  previewPriceLabel: {
+    fontSize: 10,
+    color: colors.textSecondary || "#888888",
+    fontFamily: "DMSans_500Medium",
+  },
+  previewPrice: {
+    fontSize: 18,
+    fontFamily: "DMSans_700Bold",
+    color: colors.primaryDark || "#122E1A",
   },
   previewActionBtn: {
-    flex: 1,
-    height: 52,
-    borderRadius: 14,
+    height: 42,
+    borderRadius: 12,
     overflow: "hidden",
   },
   previewActionGradient: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
+    paddingHorizontal: 18,
+    height: "100%",
+    gap: 6,
   },
   previewActionText: {
     color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "800",
-  },
-  previewActionSecondary: {
-    flex: 0.5,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E8E8E8",
-  },
-  previewActionSecondaryInner: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-  },
-  previewActionSecondaryText: {
-    color: "#1A1A1A",
     fontSize: 13,
-    fontWeight: "700",
+    fontFamily: "DMSans_700Bold",
   },
 });

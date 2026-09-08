@@ -1,5 +1,5 @@
 import { authApiClient } from '../authClient';
-import { clearCookies, hasAuthCookie, resetCookieJarReady } from '../cookieJar';
+import { clearCookies, hasAuthCookie, resetCookieJarReady, saveAuthToken } from '../cookieJar';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -15,12 +15,15 @@ const toAuthError = (error, fallbackMessage) => {
 };
 
 export const greenFibreAuthService = {
-    async register({ full_name, email, phone, password }) {
+    async register({ full_name, name, email, phone, password }) {
         try {
+            const userName = (full_name || name || '').trim();
+            const cleanPhone = phone ? String(phone).replace(/\D/g, '') : undefined;
             const response = await authApiClient.post('/users/register', {
-                full_name,
+                full_name: userName,
+                name: userName,
                 email: normalizeEmail(email),
-                phone,
+                phone: cleanPhone || undefined,
                 password,
             });
             return response.data;
@@ -36,9 +39,14 @@ export const greenFibreAuthService = {
                 email: normalizeEmail(email),
                 otp: String(otp).trim(),
             });
+            const token = response.data?.token || response.data?.data?.token || response.data?.accessToken;
+            if (token) {
+                await saveAuthToken(token);
+            }
             return {
                 ...response.data,
-                authenticated: hasAuthCookie(),
+                token: token || undefined,
+                authenticated: true,
             };
         }
         catch (error) {
@@ -64,9 +72,14 @@ export const greenFibreAuthService = {
                 email: normalizeEmail(email),
                 password,
             });
+            const token = response.data?.token || response.data?.data?.token || response.data?.accessToken;
+            if (token) {
+                await saveAuthToken(token);
+            }
             return {
                 ...response.data,
-                authenticated: hasAuthCookie(),
+                token: token || undefined,
+                authenticated: true,
             };
         }
         catch (error) {

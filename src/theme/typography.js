@@ -1,130 +1,174 @@
-// export const typography = {
-//     hero: {
-//         fontSize: 32,
-//         fontWeight: '700',
-//         lineHeight: 40,
-//         letterSpacing: -0.5,
-//     },
-//     h1: {
-//         fontSize: 28,
-//         fontWeight: '700',
-//         lineHeight: 36,
-//     },
-//     h2: {
-//         fontSize: 22,
-//         fontWeight: '600',
-//         lineHeight: 30,
-//     },
-//     h3: {
-//         fontSize: 18,
-//         fontWeight: '600',
-//         lineHeight: 26,
-//     },
-//     body: {
-//         fontSize: 15,
-//         fontWeight: '400',
-//         lineHeight: 24,
-//     },
-//     bodySmall: {
-//         fontSize: 13,
-//         fontWeight: '400',
-//         lineHeight: 20,
-//     },
-//     caption: {
-//         fontSize: 11,
-//         fontWeight: '500',
-//         lineHeight: 16,
-//         letterSpacing: 0.5,
-//         textTransform: 'uppercase',
-//     },
-//     button: {
-//         fontSize: 15,
-//         fontWeight: '600',
-//         lineHeight: 20,
-//     },
-//     stat: {
-//         fontSize: 26,
-//         fontWeight: '700',
-//         lineHeight: 32,
-//     },
-// };
-
-
 // src/theme/typography.js
+// Green Fibre — Editorial type scale
+// Serif: Playfair Display — headlines, hero, editorial
+// Sans:  DM Sans          — body, UI labels, buttons
+// Mono:  DM Mono          — overlines, captions, category tags
 
 import { colors } from './colors';
 
+// Font family constants — matched to installed expo-google-fonts packages
+export const fontFamilies = {
+  serifRegular: 'PlayfairDisplay_400Regular',
+  serifItalic: 'PlayfairDisplay_400Regular_Italic',
+  serifSemiBold: 'PlayfairDisplay_600SemiBold',
+  serifBold: 'PlayfairDisplay_700Bold',
+  serifExtraBold: 'PlayfairDisplay_800ExtraBold',
+  sansRegular: 'DMSans_400Regular',
+  sansMedium: 'DMSans_500Medium',
+  sansSemiBold: 'DMSans_600SemiBold',
+  sansBold: 'DMSans_700Bold',
+  monoRegular: 'DMMono_400Regular',
+  monoMedium: 'DMMono_500Medium',
+};
+
 export const typography = {
-  h1: {
-    fontSize: 34,
-    fontWeight: '700',
+  // ── Hero / Editorial ────────────────────────────────────────
+  hero: {
+    fontFamily: fontFamilies.serifBold,
+    fontSize: 38,
+    lineHeight: 46,
+    letterSpacing: -0.5,
     color: colors.textPrimary,
-    lineHeight: 41,
+  },
+  heroLight: {
+    fontFamily: fontFamilies.serifRegular,
+    fontSize: 34,
+    lineHeight: 42,
+    letterSpacing: -0.3,
+    color: colors.textOnDark,
+  },
+
+  // ── Headings ────────────────────────────────────────────────
+  h1: {
+    fontFamily: fontFamilies.serifBold,
+    fontSize: 30,
+    lineHeight: 38,
+    letterSpacing: -0.3,
+    color: colors.textPrimary,
   },
   h2: {
-    fontSize: 28,
-    fontWeight: '700',
+    fontFamily: fontFamilies.serifSemiBold,
+    fontSize: 24,
+    lineHeight: 32,
+    letterSpacing: -0.2,
     color: colors.textPrimary,
-    lineHeight: 34,
   },
   h3: {
-    fontSize: 24,
-    fontWeight: '600',
+    fontFamily: fontFamilies.sansSemiBold,
+    fontSize: 20,
+    lineHeight: 28,
     color: colors.textPrimary,
-    lineHeight: 30,
   },
   h4: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    lineHeight: 26,
-  },
-  subtitle1: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: colors.textPrimary,
+    fontFamily: fontFamilies.sansSemiBold,
+    fontSize: 17,
     lineHeight: 24,
-  },
-  subtitle2: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.textSecondary,
-    lineHeight: 22,
-  },
-  body: {
-    fontSize: 16,
-    fontWeight: '400',
     color: colors.textPrimary,
-    lineHeight: 22,
+  },
+
+  // ── Overline / Label ────────────────────────────────────────
+  // DM Mono caps — category tags, section labels, RAW BAMBOO style
+  overline: {
+    fontFamily: fontFamilies.monoMedium,
+    fontSize: 10,
+    lineHeight: 14,
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+    color: colors.textSecondary,
+  },
+  overlineSm: {
+    fontFamily: fontFamilies.monoRegular,
+    fontSize: 9,
+    lineHeight: 12,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    color: colors.textSecondary,
+  },
+
+  // ── Body ────────────────────────────────────────────────────
+  body: {
+    fontFamily: fontFamilies.sansRegular,
+    fontSize: 15,
+    lineHeight: 24,
+    color: colors.textPrimary,
   },
   body1: {
-    fontSize: 16,
-    fontWeight: '400',
+    fontFamily: fontFamilies.sansRegular,
+    fontSize: 15,
+    lineHeight: 24,
     color: colors.textPrimary,
-    lineHeight: 22,
   },
   body2: {
+    fontFamily: fontFamilies.sansRegular,
     fontSize: 14,
-    fontWeight: '400',
+    lineHeight: 22,
     color: colors.textSecondary,
-    lineHeight: 20,
   },
   bodySmall: {
-    fontSize: 14,
-    fontWeight: '400',
+    fontFamily: fontFamilies.sansRegular,
+    fontSize: 13,
+    lineHeight: 20,
     color: colors.textPrimary,
+  },
+  bodyLarge: {
+    fontFamily: fontFamilies.sansRegular,
+    fontSize: 17,
+    lineHeight: 27,
+    color: colors.textPrimary,
+  },
+
+  // ── UI Labels ───────────────────────────────────────────────
+  subtitle1: {
+    fontFamily: fontFamilies.sansMedium,
+    fontSize: 16,
+    lineHeight: 24,
+    color: colors.textPrimary,
+  },
+  subtitle2: {
+    fontFamily: fontFamilies.sansMedium,
+    fontSize: 14,
+    lineHeight: 22,
+    color: colors.textSecondary,
+  },
+  label: {
+    fontFamily: fontFamilies.sansMedium,
+    fontSize: 12,
     lineHeight: 18,
+    letterSpacing: 0.3,
+    color: colors.textSecondary,
   },
   caption: {
-    fontSize: 12,
-    fontWeight: '400',
-    color: colors.textLight,
+    fontFamily: fontFamilies.sansRegular,
+    fontSize: 11,
     lineHeight: 16,
+    color: colors.textLight,
   },
-  hero: {
-    fontSize: 38,
-    fontWeight: '900',
-    color: colors.textPrimary,
-    lineHeight: 44,
+
+  // ── Button ──────────────────────────────────────────────────
+  button: {
+    fontFamily: fontFamilies.sansSemiBold,
+    fontSize: 15,
+    lineHeight: 20,
+    letterSpacing: 0.2,
+  },
+  buttonSm: {
+    fontFamily: fontFamilies.sansSemiBold,
+    fontSize: 13,
+    lineHeight: 18,
+    letterSpacing: 0.2,
+  },
+
+  // ── Price ───────────────────────────────────────────────────
+  price: {
+    fontFamily: fontFamilies.sansBold,
+    fontSize: 18,
+    lineHeight: 24,
+    color: colors.primary,
+  },
+  priceSm: {
+    fontFamily: fontFamilies.sansSemiBold,
+    fontSize: 15,
+    lineHeight: 20,
+    color: colors.primary,
   },
 };

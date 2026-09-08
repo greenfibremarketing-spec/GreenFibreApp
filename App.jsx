@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import { enableScreens, enableFreeze } from "react-native-screens";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Provider } from "react-redux";
@@ -12,7 +13,11 @@ import { SessionSync } from "./src/components/session/SessionSync";
 import { useAppSelector, useAppDispatch } from "./src/store/hooks";
 import { hideToast } from "./src/store/slices/uiSlice";
 import { colors, spacing, typography, shadows } from "./src/theme";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useBrandFonts } from "./src/theme/fonts";
+
+// Configure react-native-screens safely for Fabric & nested navigators
+enableScreens(true);
+enableFreeze(false);
 
 function ToastOverlay() {
   const toast = useAppSelector((s) => s.ui.toast);
@@ -30,18 +35,29 @@ function ToastOverlay() {
     </View>
   );
 }
+
 function AppContent() {
   return (
-    <>
-      <SafeAreaView style={{ flex: 1 }}>
-        <StatusBar style="dark" />
-        <RootNavigator />
-        <ToastOverlay />
-      </SafeAreaView>
-    </>
+    <View style={styles.appContentContainer}>
+      <StatusBar style="dark" />
+      <RootNavigator />
+      <ToastOverlay />
+    </View>
   );
 }
+
 export default function App() {
+  const { fontsLoaded, fontError } = useBrandFonts();
+
+  // Show warm cream loading screen while fonts load
+  if (!fontsLoaded && !fontError) {
+    return (
+      <View style={styles.fontLoading}>
+        <ActivityIndicator size="small" color={colors.primary} />
+      </View>
+    );
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
@@ -57,7 +73,18 @@ export default function App() {
     </GestureHandlerRootView>
   );
 }
+
 const styles = StyleSheet.create({
+  appContentContainer: {
+    flex: 1,
+    backgroundColor: colors.cream || "#FAF7F0",
+  },
+  fontLoading: {
+    flex: 1,
+    backgroundColor: colors.cream,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   toast: {
     position: "absolute",
     top: 60,

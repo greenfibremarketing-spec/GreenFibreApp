@@ -9,7 +9,7 @@ import {
   TextInput,
   FlatList,
 } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, DrawerActions } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { colors, spacing, typography, shadows } from "../theme";
@@ -48,23 +48,51 @@ const fnpColors = {
 // Category icons mapping
 const categoryIcons = {
   all: "apps-outline",
-  plants: "leaf-outline",
-  gifts: "gift-outline",
-  decor: "home-outline",
+  "kitchen-dining": "restaurant-outline",
   kitchen: "restaurant-outline",
+  kitchenware: "restaurant-outline",
+  dining: "cafe-outline",
+  drinkware: "water-outline",
+  bottles: "flask-outline",
+  "home-living": "home-outline",
+  "home-decor": "easel-outline",
+  decor: "easel-outline",
+  "storage-baskets": "file-tray-full-outline",
+  storage: "cube-outline",
+  baskets: "basket-outline",
+  "pet-care": "paw-outline",
+  pets: "paw-outline",
+  plants: "leaf-outline",
   garden: "flower-outline",
-  lifestyle: "shirt-outline",
+  gifts: "gift-outline",
+  lifestyle: "sparkles-outline",
+  stationery: "book-outline",
+  bags: "bag-handle-outline",
 };
 
 // Category colors mapping
 const categoryColors = {
   all: fnpColors.primary,
-  plants: "#2E7D32",
-  gifts: "#C62828",
+  "kitchen-dining": "#D97706",
+  kitchen: "#D97706",
+  kitchenware: "#D97706",
+  dining: "#D97706",
+  drinkware: "#0284C7",
+  bottles: "#0284C7",
+  "home-living": "#166534",
+  "home-decor": "#4E342E",
   decor: "#4E342E",
-  kitchen: "#BF360C",
-  garden: "#33691E",
-  lifestyle: "#4A148C",
+  "storage-baskets": "#854D0E",
+  storage: "#854D0E",
+  baskets: "#854D0E",
+  "pet-care": "#EA580C",
+  pets: "#EA580C",
+  plants: "#2E7D32",
+  garden: "#15803D",
+  gifts: "#BE123C",
+  lifestyle: "#7E22CE",
+  stationery: "#0F766E",
+  bags: "#9A3412",
 };
 
 // Create Animated FlatList
@@ -94,17 +122,19 @@ export function ShopScreen() {
       dispatch(setSelectedCategory(initialCategory));
       dispatch(fetchProductsByCategory({ categorySlug: initialCategory }));
     } else {
+      dispatch(setSelectedCategory("all"));
       dispatch(fetchProducts());
     }
     dispatch(fetchCategories());
   }, [dispatch, route.params?.category]);
 
   useEffect(() => {
-    if (route.params?.searchQuery) {
-      setSearchQuery(route.params.searchQuery);
+    const q = route.params?.search || route.params?.searchQuery;
+    if (q) {
+      setSearchQuery(q);
       setShowSearch(true);
     }
-  }, [route.params?.searchQuery]);
+  }, [route.params?.search, route.params?.searchQuery]);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -125,15 +155,35 @@ export function ShopScreen() {
 
   // Filter products by category and search
   const filteredProducts = products.filter((p) => {
+    const catSlug = p.categorySlug || p.category?.slug || "";
+    const catId = p.category?._id || p.category?.id || p.category || "";
+    const catName = p.categoryName || p.category?.name || "";
+
     const matchesCategory =
-      selectedCategory === "all" || p.categorySlug === selectedCategory;
+      !selectedCategory ||
+      selectedCategory === "all" ||
+      catSlug === selectedCategory ||
+      catId === selectedCategory ||
+      catName.toLowerCase() === selectedCategory.toLowerCase() ||
+      (catSlug && selectedCategory.includes(catSlug)) ||
+      (selectedCategory && catSlug.includes(selectedCategory));
+
     const matchesSearch = searchQuery
       ? p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.categoryName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        catName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.description?.toLowerCase().includes(searchQuery.toLowerCase())
       : true;
+
     return matchesCategory && matchesSearch;
   });
+
+  // If products were returned from fetchProductsByCategory, ensure they display cleanly
+  const displayedProducts =
+    filteredProducts.length > 0
+      ? filteredProducts
+      : !searchQuery && products.length > 0 && selectedCategory !== "all"
+      ? products
+      : filteredProducts;
 
   const handleCategory = (slug) => {
     dispatch(setSelectedCategory(slug));
@@ -144,19 +194,51 @@ export function ShopScreen() {
     }
   };
 
-  const getCategoryIcon = (slug) => {
-    return categoryIcons[slug] || "apps-outline";
+  const getCategoryIcon = (slug, name) => {
+    const s = (slug || "").toLowerCase().trim();
+    const n = (name || "").toLowerCase().trim();
+    if (categoryIcons[s]) return categoryIcons[s];
+    if (categoryIcons[s.replace(/_/g, "-")]) return categoryIcons[s.replace(/_/g, "-")];
+
+    if (s.includes("kitchen") || n.includes("kitchen") || n.includes("dining")) return "restaurant-outline";
+    if (s.includes("drink") || n.includes("drink") || s.includes("bottle") || n.includes("bottle")) return "water-outline";
+    if (s.includes("home") || n.includes("home") || s.includes("living") || n.includes("living")) return "home-outline";
+    if (s.includes("storage") || n.includes("storage") || s.includes("basket") || n.includes("basket")) return "file-tray-full-outline";
+    if (s.includes("pet") || n.includes("pet") || n.includes("dog") || n.includes("cat")) return "paw-outline";
+    if (s.includes("plant") || n.includes("plant")) return "leaf-outline";
+    if (s.includes("gift") || n.includes("gift")) return "gift-outline";
+    if (s.includes("garden") || n.includes("garden")) return "flower-outline";
+    if (s.includes("bag") || n.includes("bag")) return "bag-handle-outline";
+    if (s.includes("station") || n.includes("station")) return "book-outline";
+
+    return s === "all" ? "apps-outline" : "leaf-outline";
   };
 
-  const getCategoryColor = (slug) => {
-    return categoryColors[slug] || fnpColors.primary;
+  const getCategoryColor = (slug, name) => {
+    const s = (slug || "").toLowerCase().trim();
+    const n = (name || "").toLowerCase().trim();
+    if (categoryColors[s]) return categoryColors[s];
+    if (categoryColors[s.replace(/_/g, "-")]) return categoryColors[s.replace(/_/g, "-")];
+
+    if (s.includes("kitchen") || n.includes("kitchen") || n.includes("dining")) return "#D97706";
+    if (s.includes("drink") || n.includes("drink") || s.includes("bottle") || n.includes("bottle")) return "#0284C7";
+    if (s.includes("home") || n.includes("home") || s.includes("living") || n.includes("living")) return "#166534";
+    if (s.includes("storage") || n.includes("storage") || s.includes("basket") || n.includes("basket")) return "#854D0E";
+    if (s.includes("pet") || n.includes("pet") || n.includes("dog") || n.includes("cat")) return "#EA580C";
+    if (s.includes("plant") || n.includes("plant")) return "#2E7D32";
+    if (s.includes("gift") || n.includes("gift")) return "#BE123C";
+    if (s.includes("garden") || n.includes("garden")) return "#15803D";
+    if (s.includes("bag") || n.includes("bag")) return "#9A3412";
+    if (s.includes("station") || n.includes("station")) return "#0F766E";
+
+    return fnpColors.primary;
   };
 
   // Render category chip with icon
   const renderCategoryChip = (cat) => {
     const isActive = selectedCategory === cat.slug;
-    const iconName = getCategoryIcon(cat.slug);
-    const color = getCategoryColor(cat.slug);
+    const iconName = getCategoryIcon(cat.slug, cat.name);
+    const color = getCategoryColor(cat.slug, cat.name);
 
     return (
       <TouchableOpacity
@@ -275,9 +357,9 @@ export function ShopScreen() {
     </>
   );
 
-  if (error) {
+  if (error && products.length === 0) {
     return (
-      <ScreenContainer onMenuPress={() => drawerNav.openDrawer()}>
+      <ScreenContainer onMenuPress={() => stackNav.dispatch(DrawerActions.openDrawer())}>
         <ErrorState message={error} onRetry={() => dispatch(fetchProducts())} />
       </ScreenContainer>
     );
@@ -285,7 +367,7 @@ export function ShopScreen() {
 
   return (
     <ScreenContainer
-      onMenuPress={() => drawerNav.openDrawer()}
+      onMenuPress={() => stackNav.dispatch(DrawerActions.openDrawer())}
       headerTitle="Shop"
       scroll={false}
       headerRight={
@@ -316,62 +398,63 @@ export function ShopScreen() {
       }
     >
       <View style={styles.container}>
-        {/* Products Grid with all content in FlatList */}
-        {loading ? (
-          <ProductGridSkeleton count={6} />
-        ) : filteredProducts.length === 0 ? (
-          <View style={styles.emptyWrap}>
-            <View style={styles.emptyIconWrap}>
-              <LinearGradient
-                colors={[fnpColors.primaryLight, "#C8E6C9"]}
-                style={styles.emptyIconGradient}
-              >
-                <Ionicons
-                  name="leaf-outline"
-                  size={40}
-                  color={fnpColors.primary}
-                />
-              </LinearGradient>
-            </View>
-            <Text style={styles.emptyTitle}>No Products Found</Text>
-            <Text style={styles.emptyText}>
-              {searchQuery
-                ? `No results found for "${searchQuery}"`
-                : "No products available in this category yet"}
-            </Text>
-            {(searchQuery || selectedCategory !== "all") && (
-              <TouchableOpacity
-                style={styles.clearFiltersBtn}
-                onPress={() => {
-                  setSearchQuery("");
-                  dispatch(setSelectedCategory("all"));
-                }}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.clearFiltersText}>Clear Filters</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        ) : (
-          <AnimatedFlatList
-            data={filteredProducts}
-            keyExtractor={(item) => item._id}
-            renderItem={renderProductItem}
-            numColumns={viewMode === "grid" ? 2 : 1}
-            key={viewMode === "grid" ? "grid" : "list"}
-            contentContainerStyle={[
-              styles.productGrid,
-              viewMode === "grid" && styles.gridList,
-            ]}
-            showsVerticalScrollIndicator={false}
-            onScroll={Animated.event(
-              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-              { useNativeDriver: true },
-            )}
-            ListHeaderComponent={renderCategoriesHeader()}
-            ListFooterComponent={<View style={styles.footerSpacer} />}
-          />
-        )}
+        <AnimatedFlatList
+          data={loading ? [] : displayedProducts}
+          keyExtractor={(item) => item._id || item.id || String(Math.random())}
+          renderItem={renderProductItem}
+          numColumns={viewMode === "grid" ? 2 : 1}
+          key={viewMode === "grid" ? "grid" : "list"}
+          contentContainerStyle={[
+            styles.productGrid,
+            viewMode === "grid" && styles.gridList,
+          ]}
+          showsVerticalScrollIndicator={false}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: true },
+          )}
+          ListHeaderComponent={renderCategoriesHeader()}
+          ListEmptyComponent={
+            loading ? (
+              <ProductGridSkeleton count={6} />
+            ) : (
+              <View style={styles.emptyWrap}>
+                <View style={styles.emptyIconWrap}>
+                  <LinearGradient
+                    colors={[fnpColors.primaryLight, "#C8E6C9"]}
+                    style={styles.emptyIconGradient}
+                  >
+                    <Ionicons
+                      name="leaf-outline"
+                      size={40}
+                      color={fnpColors.primary}
+                    />
+                  </LinearGradient>
+                </View>
+                <Text style={styles.emptyTitle}>No Products Found</Text>
+                <Text style={styles.emptyText}>
+                  {searchQuery
+                    ? `No results found for "${searchQuery}"`
+                    : "No products available in this category yet"}
+                </Text>
+                {(searchQuery || selectedCategory !== "all") && (
+                  <TouchableOpacity
+                    style={styles.clearFiltersBtn}
+                    onPress={() => {
+                      setSearchQuery("");
+                      dispatch(setSelectedCategory("all"));
+                      dispatch(fetchProducts());
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.clearFiltersText}>Clear Filters</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )
+          }
+          ListFooterComponent={<View style={styles.footerSpacer} />}
+        />
       </View>
     </ScreenContainer>
   );

@@ -1,670 +1,441 @@
-
 // src/components/common/LegalPageView.jsx
-import React, { useEffect, useRef, useState } from "react";
+// Green Fibre — Premium policy page layout
+// TOC with jump-links at top, body serif/sans pairing, 16px/26px body
+// No card boxes — plain, well-typeset long-form on cream bg
+
+import React, { useRef } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Animated,
-  Share,
-  Alert,
-  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { colors, spacing, typography, shadows } from "../../theme";
+import Animated, { FadeInDown } from "react-native-reanimated";
+import { colors, spacing } from "../../theme";
 
-// FNP Brand Colors
-const fnpColors = {
-  primary: "#2E7D32",
-  primaryLight: "#E8F5E9",
-  primaryDark: "#1B5E20",
-  gold: "#FFD700",
-  goldLight: "#FFF8E1",
-  white: "#FFFFFF",
-  text: "#1A1A1A",
-  textSecondary: "#666666",
-  textMuted: "#999999",
-  borderLight: "#E8E8E8",
-  success: "#4CAF50",
-  danger: "#F44336",
-  warning: "#FF9800",
-  cream: "#FFF8F0",
-};
+// ── Section refs map ──────────────────────────────────────────────────────
+// We track Y-positions to enable jump-links
 
-// Icon mapping for different page types
-const pageIcons = {
-  "Privacy Policy": "shield-checkmark-outline",
-  "Terms & Conditions": "document-text-outline",
-  "Shipping Policy": "car-outline",
-  "Refund Policy": "return-down-back-outline",
-};
-
-// Section Item Component - handles different data structures
-const SectionItem = ({ section, index }) => {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(20)).current;
-  const [expanded, setExpanded] = useState(true);
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 400,
-        delay: index * 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 400,
-        delay: index * 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
-
-  // Get section title
+// ── Renders a single content section ─────────────────────────────────────
+function LegalSection({ section, index, sectionRef }) {
   const sectionTitle = section?.title || `Section ${index + 1}`;
 
+  const renderContent = (content) => {
+    if (!content) return null;
+    if (typeof content === "string") {
+      return <Text style={styles.paragraph}>{content}</Text>;
+    }
+    if (Array.isArray(content)) {
+      return content.map((para, i) => (
+        <Text key={i} style={styles.paragraph}>{para}</Text>
+      ));
+    }
+    return null;
+  };
+
   return (
-    <Animated.View
-      style={[
-        styles.sectionWrapper,
-        {
-          opacity: fadeAnim,
-          transform: [{ translateY: slideAnim }],
-        },
-      ]}
-    >
-      <TouchableOpacity
-        style={styles.sectionHeader}
-        onPress={() => setExpanded(!expanded)}
-        activeOpacity={0.7}
-      >
-        <View style={styles.sectionHeaderLeft}>
-          <View style={styles.sectionIconWrap}>
-            <LinearGradient
-              colors={[fnpColors.primaryLight, "#C8E6C9"]}
-              style={styles.sectionIconGradient}
-            >
-              <Text style={styles.sectionIconNumber}>{index + 1}</Text>
-            </LinearGradient>
-          </View>
-          <Text style={styles.sectionTitle}>{sectionTitle}</Text>
-        </View>
-        <Ionicons
-          name={expanded ? "chevron-up" : "chevron-down"}
-          size={20}
-          color={fnpColors.textMuted}
-        />
-      </TouchableOpacity>
+    <View ref={sectionRef} style={styles.section}>
+      {/* Section heading — Playfair Display */}
+      <View style={styles.sectionTitleRow}>
+        <Text style={styles.sectionNumber}>{String(index + 1).padStart(2, "0")}</Text>
+        <Text style={styles.sectionTitle}>{sectionTitle}</Text>
+      </View>
 
-      {expanded && (
-        <View style={styles.sectionContent}>
-          {/* Handle direct content (string) */}
-          {section.content && typeof section.content === "string" && (
-            <Text style={styles.paragraph}>{section.content}</Text>
-          )}
+      {renderContent(section.content)}
 
-          {/* Handle subsections */}
-          {section.subsections && section.subsections.length > 0 && (
-            <View style={styles.subsectionsContainer}>
-              {section.subsections.map((sub, i) => (
-                <View key={i} style={styles.subsection}>
-                  {sub.title && (
-                    <Text style={styles.subsectionTitle}>{sub.title}</Text>
-                  )}
-                  {sub.content && (
-                    <Text style={styles.subsectionContent}>{sub.content}</Text>
-                  )}
-                  {sub.items && sub.items.length > 0 && (
-                    <View style={styles.listContainer}>
-                      {sub.items.map((item, j) => (
-                        <View key={j} style={styles.listItem}>
-                          <View style={styles.listBullet}>
-                            <Ionicons
-                              name="checkmark-circle"
-                              size={16}
-                              color={fnpColors.primary}
-                            />
-                          </View>
-                          <Text style={styles.listText}>{item}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  )}
-                </View>
-              ))}
+      {/* Subsections */}
+      {section.subsections?.map((sub, i) => (
+        <View key={i} style={styles.subsection}>
+          {sub.title && <Text style={styles.subsectionTitle}>{sub.title}</Text>}
+          {sub.content && <Text style={styles.paragraph}>{sub.content}</Text>}
+          {sub.items?.map((item, j) => (
+            <View key={j} style={styles.bulletRow}>
+              <View style={styles.bulletDot} />
+              <Text style={styles.bulletText}>{item}</Text>
             </View>
-          )}
+          ))}
+        </View>
+      ))}
 
-          {/* Handle items list */}
-          {section.items &&
-            section.items.length > 0 &&
-            !section.subsections && (
-              <View style={styles.listContainer}>
-                {section.items.map((item, i) => (
-                  <View key={i} style={styles.listItem}>
-                    <View style={styles.listBullet}>
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={16}
-                        color={fnpColors.primary}
-                      />
-                    </View>
-                    <Text style={styles.listText}>{item}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
-
-          {/* Handle array of content strings (legacy format) */}
-          {section.content &&
-            Array.isArray(section.content) &&
-            section.content.map((paragraph, i) => (
-              <Text key={i} style={styles.paragraph}>
-                {paragraph}
-              </Text>
-            ))}
+      {/* Items list (when no subsections) */}
+      {section.items?.length > 0 && !section.subsections && (
+        <View style={styles.bulletList}>
+          {section.items.map((item, i) => (
+            <View key={i} style={styles.bulletRow}>
+              <View style={styles.bulletDot} />
+              <Text style={styles.bulletText}>{item}</Text>
+            </View>
+          ))}
         </View>
       )}
-    </Animated.View>
-  );
-};
 
-// Quick Navigation Component
-const QuickNav = ({ sections, onPress }) => {
-  if (!sections || sections.length === 0) return null;
-
-  return (
-    <View style={styles.quickNavContainer}>
-      <Text style={styles.quickNavTitle}>📑 Quick Navigation</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.quickNavScroll}
-      >
-        {sections.map((section, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.quickNavItem}
-            onPress={() => onPress(index)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.quickNavText}>
-              {section?.title || `Section ${index + 1}`}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      {/* Section divider */}
+      <View style={styles.sectionDivider} />
     </View>
   );
-};
+}
 
-// Related Links Component
-const RelatedLinks = ({ links, navigation }) => {
-  if (!links || links.length === 0) return null;
+// ── Table of Contents ─────────────────────────────────────────────────────
+function TableOfContents({ sections, onPress }) {
+  if (!sections?.length) return null;
 
   return (
-    <View style={styles.relatedLinksContainer}>
-      <Text style={styles.relatedLinksTitle}>🔗 Related Pages</Text>
-      <View style={styles.relatedLinksGrid}>
-        {links.map((link, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.relatedLinkItem}
-            onPress={() => navigation.navigate(link.route)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="link-outline" size={16} color={fnpColors.primary} />
-            <Text style={styles.relatedLinkText}>{link.label}</Text>
-            <Ionicons
-              name="chevron-forward"
-              size={14}
-              color={fnpColors.textMuted}
-            />
-          </TouchableOpacity>
-        ))}
-      </View>
+    <View style={styles.tocWrap}>
+      <Text style={styles.tocOverline}>CONTENTS</Text>
+      {sections.map((section, index) => (
+        <TouchableOpacity
+          key={index}
+          style={styles.tocItem}
+          onPress={() => onPress(index)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.tocNumber}>{String(index + 1).padStart(2, "0")}</Text>
+          <Text style={styles.tocTitle} numberOfLines={1}>
+            {section?.title || `Section ${index + 1}`}
+          </Text>
+          <Ionicons name="arrow-down" size={12} color={colors.primary} />
+        </TouchableOpacity>
+      ))}
     </View>
   );
-};
+}
 
-// Main LegalPageView Component
+// ── Main Component ────────────────────────────────────────────────────────
 export function LegalPageView({ page, navigation }) {
   const scrollRef = useRef(null);
+  const sectionRefs = useRef([]);
 
-  // Safe data extraction with fallbacks
   const pageData = page || {};
   const title = pageData.title || "Legal Page";
-  const lastUpdated = pageData.lastUpdated || "January 1, 2024";
+  const lastUpdated = pageData.lastUpdated || "January 2024";
   const intro = pageData.intro || [];
   const sections = pageData.sections || [];
   const relatedLinks = pageData.relatedLinks || [];
 
-  // Get icon for page
-  const iconName = pageIcons[title] || "document-text-outline";
-
-  // Handle scroll to section
   const scrollToSection = (index) => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTo({
-        y: index * 100 + 200,
-        animated: true,
-      });
-    }
-  };
-
-  // Handle share
-  const handleShare = async () => {
-    try {
-      const shareMessage = `📋 ${title}\n\n${intro.join("\n\n")}\n\n${sections.map((s) => `${s?.title || "Section"}\n`).join("\n")}\n\nLast Updated: ${lastUpdated}`;
-
-      await Share.share({
-        message: shareMessage,
-        title: title,
-      });
-    } catch (error) {
-      Alert.alert("Error", "Unable to share at the moment.");
-    }
-  };
-
-  // Handle print (simulated)
-  const handlePrint = () => {
-    Alert.alert("Print", "Print functionality will be available soon.");
+    sectionRefs.current[index]?.measureLayout(
+      scrollRef.current,
+      (_, y) => {
+        scrollRef.current?.scrollTo({ y: y - 20, animated: true });
+      },
+      () => {},
+    );
   };
 
   return (
     <ScrollView
       ref={scrollRef}
+      style={styles.container}
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.scrollContainer}
+      contentContainerStyle={styles.content}
     >
-      {/* Header Section */}
-      <View style={styles.headerSection}>
-        <View style={styles.headerIconContainer}>
-          <LinearGradient
-            colors={[fnpColors.primary, fnpColors.primaryDark]}
-            style={styles.headerIconGradient}
-          >
-            <Ionicons name={iconName} size={40} color="#FFFFFF" />
-          </LinearGradient>
-        </View>
-        <Text style={styles.headerTitle}>{title}</Text>
-        <Text style={styles.headerSubtitle}>
-          We value your privacy and are committed to protecting your personal
-          data.
-        </Text>
+      {/* ── TOP BACK / MENU BUTTON ──────────────────────── */}
+      {navigation && (
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => {
+            if (navigation.canGoBack()) {
+              navigation.goBack();
+            } else {
+              navigation.navigate("Tabs", { screen: "Home" });
+            }
+          }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="arrow-back" size={18} color={colors.textPrimary} />
+          <Text style={styles.backButtonText}>Home</Text>
+        </TouchableOpacity>
+      )}
 
-        {/* Last Updated */}
-        <View style={styles.lastUpdatedContainer}>
-          <LinearGradient
-            colors={[fnpColors.primaryLight, "#C8E6C9"]}
-            style={styles.lastUpdatedGradient}
-          >
-            <Ionicons name="time-outline" size={16} color={fnpColors.primary} />
-            <Text style={styles.lastUpdatedText}>
-              Last Updated: {lastUpdated}
-            </Text>
-          </LinearGradient>
+      {/* ── PAGE HEADER ───────────────────────────────────── */}
+      <Animated.View entering={FadeInDown.duration(400)} style={styles.pageHeader}>
+        <Text style={styles.pageTitle}>{title}</Text>
+        <View style={styles.updatedRow}>
+          <Ionicons name="time-outline" size={13} color={colors.textMuted} />
+          <Text style={styles.updatedText}>Last updated: {lastUpdated}</Text>
         </View>
-      </View>
+      </Animated.View>
 
-      {/* Intro Section */}
-      {intro.length > 0 && (
-        <View style={styles.introContainer}>
-          {intro.map((paragraph, i) => (
-            <Text key={i} style={styles.introText}>
-              {paragraph}
-            </Text>
+      {/* ── INTRO PARAGRAPHS ──────────────────────────────── */}
+      {(Array.isArray(intro) ? intro : [intro]).filter(Boolean).map((p, i) => (
+        <Animated.View key={i} entering={FadeInDown.delay(80).duration(400)}>
+          <Text style={styles.introParagraph}>{p}</Text>
+        </Animated.View>
+      ))}
+
+      {/* ── TABLE OF CONTENTS ─────────────────────────────── */}
+      <Animated.View entering={FadeInDown.delay(120).duration(400)}>
+        <TableOfContents sections={sections} onPress={scrollToSection} />
+      </Animated.View>
+
+      {/* ── DIVIDER ───────────────────────────────────────── */}
+      <View style={styles.mainDivider} />
+
+      {/* ── SECTIONS ──────────────────────────────────────── */}
+      {sections.map((section, index) => (
+        <Animated.View
+          key={index}
+          entering={FadeInDown.delay(index * 40 + 160).duration(400)}
+        >
+          <LegalSection
+            section={section}
+            index={index}
+            sectionRef={(ref) => { sectionRefs.current[index] = ref; }}
+          />
+        </Animated.View>
+      ))}
+
+      {/* ── RELATED LINKS ─────────────────────────────────── */}
+      {relatedLinks.length > 0 && (
+        <View style={styles.relatedWrap}>
+          <Text style={styles.relatedOverline}>RELATED POLICIES</Text>
+          {relatedLinks.map((link, i) => (
+            <TouchableOpacity
+              key={i}
+              style={styles.relatedItem}
+              onPress={() => navigation?.navigate(link.route)}
+            >
+              <Text style={styles.relatedText}>{link.label}</Text>
+              <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+            </TouchableOpacity>
           ))}
         </View>
       )}
 
-      {/* Quick Navigation */}
-      {sections.length > 3 && (
-        <QuickNav sections={sections} onPress={scrollToSection} />
-      )}
-
-      {/* Sections */}
-      <View style={styles.sectionsContainer}>
-        {sections.map((section, index) => (
-          <SectionItem key={index} section={section} index={index} />
-        ))}
+      {/* ── FOOTER NOTE ───────────────────────────────────── */}
+      <View style={styles.footerNote}>
+        <Text style={styles.footerText}>
+          For questions about any of our policies, contact us at{" "}
+          <Text style={styles.footerLink}>support@greenfibre.com</Text>
+        </Text>
       </View>
-
-      {/* Related Links */}
-      <RelatedLinks links={relatedLinks} navigation={navigation} />
-
-      {/* Footer */}
-      <View style={styles.footer}>
-        <LinearGradient
-          colors={["#F5F5F5", "#FFFFFF"]}
-          style={styles.footerGradient}
-        >
-          <View style={styles.footerContent}>
-            <Ionicons
-              name="shield-outline"
-              size={24}
-              color={fnpColors.primary}
-            />
-            <Text style={styles.footerTitle}>Need Help?</Text>
-            <Text style={styles.footerText}>
-              If you have any questions, our support team is here to help.
-            </Text>
-            <TouchableOpacity
-              style={styles.contactBtn}
-              onPress={() => navigation.navigate("Contact")}
-              activeOpacity={0.7}
-            >
-              <LinearGradient
-                colors={[fnpColors.primary, fnpColors.primaryDark]}
-                style={styles.contactBtnGradient}
-              >
-                <Ionicons name="mail-outline" size={20} color="#FFFFFF" />
-                <Text style={styles.contactBtnText}>Contact Support</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
-        </LinearGradient>
-      </View>
-
-      {/* Bottom Spacer */}
-      <View style={styles.bottomSpacer} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContainer: {
-    paddingBottom: 20,
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  content: {
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 60,
   },
 
-  // ===== HEADER =====
-  headerSection: {
-    alignItems: "center",
-    paddingHorizontal: spacing.screen,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.lg,
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 16,
+    alignSelf: 'flex-start',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    backgroundColor: colors.creamDark || '#EDE8DF',
   },
-  headerIconContainer: {
-    marginBottom: spacing.md,
-  },
-  headerIconGradient: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    ...shadows.medium,
-  },
-  headerTitle: {
-    ...typography.h1,
-    color: fnpColors.text,
-    fontSize: 26,
-    fontWeight: "900",
-    textAlign: "center",
-    marginBottom: spacing.sm,
-  },
-  headerSubtitle: {
-    ...typography.body,
-    color: fnpColors.textMuted,
-    textAlign: "center",
-    lineHeight: 22,
-    marginBottom: spacing.md,
+  backButtonText: {
+    fontFamily: 'DMSans_500Medium',
+    fontSize: 13,
+    color: colors.textPrimary,
   },
 
-  // ===== LAST UPDATED =====
-  lastUpdatedContainer: {
-    width: "100%",
+  // ── Page header ───────────────────────────────────────────
+  pageHeader: {
+    marginBottom: 24,
   },
-  lastUpdatedGradient: {
+  pageTitle: {
+    fontFamily: "PlayfairDisplay_700Bold",
+    fontSize: 30,
+    lineHeight: 38,
+    color: colors.textPrimary,
+    marginBottom: 10,
+  },
+  updatedRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: 12,
+    gap: 5,
   },
-  lastUpdatedText: {
-    ...typography.bodySmall,
-    color: fnpColors.primaryDark,
-    fontWeight: "600",
-  },
-
-  // ===== INTRO =====
-  introContainer: {
-    paddingHorizontal: spacing.screen,
-    marginBottom: spacing.lg,
-    backgroundColor: fnpColors.white,
-    borderRadius: spacing.cardRadius,
-    padding: spacing.lg,
-    marginHorizontal: spacing.screen,
-    ...shadows.soft,
-    borderWidth: 1,
-    borderColor: fnpColors.borderLight,
-  },
-  introText: {
-    ...typography.body,
-    color: fnpColors.textSecondary,
-    lineHeight: 24,
-    marginBottom: spacing.sm,
-    fontSize: 14,
-  },
-
-  // ===== QUICK NAV =====
-  quickNavContainer: {
-    paddingHorizontal: spacing.screen,
-    marginBottom: spacing.md,
-  },
-  quickNavTitle: {
-    ...typography.body,
-    fontWeight: "700",
-    color: fnpColors.text,
-    marginBottom: spacing.sm,
-    fontSize: 14,
-  },
-  quickNavScroll: {
-    gap: 8,
-  },
-  quickNavItem: {
-    backgroundColor: fnpColors.primaryLight,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  quickNavText: {
-    ...typography.bodySmall,
-    color: fnpColors.primary,
-    fontWeight: "600",
+  updatedText: {
+    fontFamily: "DMSans_400Regular",
     fontSize: 12,
+    color: colors.textMuted,
   },
 
-  // ===== SECTIONS =====
-  sectionsContainer: {
-    paddingHorizontal: spacing.screen,
-    gap: spacing.md,
+  // ── Intro ──────────────────────────────────────────────────
+  introParagraph: {
+    fontFamily: "DMSans_400Regular",
+    fontSize: 16,
+    lineHeight: 26,
+    color: colors.textSecondary,
+    marginBottom: 20,
   },
-  sectionWrapper: {
-    backgroundColor: fnpColors.white,
-    borderRadius: spacing.cardRadius,
-    overflow: "hidden",
-    ...shadows.soft,
+
+  // ── Table of contents ──────────────────────────────────────
+  tocWrap: {
+    backgroundColor: colors.primarySurface,
+    borderRadius: 14,
+    padding: 20,
+    marginBottom: 8,
     borderWidth: 1,
-    borderColor: fnpColors.borderLight,
+    borderColor: colors.primaryMuted,
   },
-  sectionHeader: {
+  tocOverline: {
+    fontFamily: "DMMono_500Medium",
+    fontSize: 10,
+    letterSpacing: 1.8,
+    color: colors.primary,
+    marginBottom: 14,
+  },
+  tocItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 9,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.primaryMuted,
+  },
+  tocNumber: {
+    fontFamily: "DMMono_400Regular",
+    fontSize: 11,
+    color: colors.primary,
+    width: 22,
+  },
+  tocTitle: {
+    fontFamily: "DMSans_500Medium",
+    fontSize: 14,
+    color: colors.textPrimary,
+    flex: 1,
+  },
+
+  // ── Main divider ───────────────────────────────────────────
+  mainDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: 32,
+  },
+
+  // ── Section ───────────────────────────────────────────────
+  section: {
+    marginBottom: 4,
+  },
+  sectionTitleRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    marginBottom: 16,
+  },
+  sectionNumber: {
+    fontFamily: "DMMono_400Regular",
+    fontSize: 12,
+    color: colors.primary,
+    marginTop: 3,
+  },
+  sectionTitle: {
+    fontFamily: "PlayfairDisplay_600SemiBold",
+    fontSize: 20,
+    lineHeight: 28,
+    color: colors.textPrimary,
+    flex: 1,
+  },
+  paragraph: {
+    fontFamily: "DMSans_400Regular",
+    fontSize: 15,
+    lineHeight: 26,
+    color: colors.text,
+    marginBottom: 16,
+  },
+
+  // ── Subsections ───────────────────────────────────────────
+  subsection: {
+    marginBottom: 16,
+    paddingLeft: 34,
+  },
+  subsectionTitle: {
+    fontFamily: "DMSans_600SemiBold",
+    fontSize: 15,
+    lineHeight: 22,
+    color: colors.textPrimary,
+    marginBottom: 8,
+  },
+
+  // ── Bullet list ───────────────────────────────────────────
+  bulletList: {
+    paddingLeft: 8,
+  },
+  bulletRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    marginBottom: 8,
+    paddingLeft: 34,
+  },
+  bulletDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: colors.primary,
+    marginTop: 9,
+    flexShrink: 0,
+  },
+  bulletText: {
+    fontFamily: "DMSans_400Regular",
+    fontSize: 15,
+    lineHeight: 24,
+    color: colors.text,
+    flex: 1,
+  },
+
+  sectionDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginTop: 24,
+    marginBottom: 28,
+  },
+
+  // ── Related links ─────────────────────────────────────────
+  relatedWrap: {
+    marginTop: 8,
+    marginBottom: 32,
+  },
+  relatedOverline: {
+    fontFamily: "DMMono_500Medium",
+    fontSize: 10,
+    letterSpacing: 1.8,
+    color: colors.textSecondary,
+    marginBottom: 14,
+  },
+  relatedItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: spacing.md,
-    backgroundColor: fnpColors.white,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  sectionHeaderLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    gap: spacing.sm,
-  },
-  sectionIconWrap: {
-    marginRight: spacing.sm,
-  },
-  sectionIconGradient: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sectionIconNumber: {
-    color: fnpColors.primary,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  sectionTitle: {
-    ...typography.h3,
-    color: fnpColors.text,
-    fontSize: 15,
-    fontWeight: "700",
-    flex: 1,
-  },
-  sectionContent: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
-    paddingTop: spacing.xs,
-  },
-  paragraph: {
-    ...typography.body,
-    color: fnpColors.textSecondary,
-    lineHeight: 24,
-    marginBottom: spacing.sm,
+  relatedText: {
+    fontFamily: "DMSans_500Medium",
     fontSize: 14,
-  },
-  subsectionsContainer: {
-    gap: spacing.md,
-  },
-  subsection: {
-    marginBottom: spacing.sm,
-  },
-  subsectionTitle: {
-    ...typography.h3,
-    color: fnpColors.text,
-    fontSize: 14,
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  subsectionContent: {
-    ...typography.body,
-    color: fnpColors.textSecondary,
-    lineHeight: 22,
-    fontSize: 14,
-  },
-  listContainer: {
-    marginTop: spacing.sm,
-    gap: spacing.sm,
-  },
-  listItem: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.sm,
-  },
-  listBullet: {
-    marginTop: 2,
-  },
-  listText: {
-    ...typography.body,
-    color: fnpColors.textSecondary,
-    lineHeight: 22,
-    flex: 1,
-    fontSize: 14,
+    color: colors.primary,
   },
 
-  // ===== RELATED LINKS =====
-  relatedLinksContainer: {
-    paddingHorizontal: spacing.screen,
-    marginTop: spacing.xl,
-  },
-  relatedLinksTitle: {
-    ...typography.body,
-    fontWeight: "700",
-    color: fnpColors.text,
-    marginBottom: spacing.md,
-    fontSize: 16,
-  },
-  relatedLinksGrid: {
-    gap: spacing.sm,
-  },
-  relatedLinkItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    backgroundColor: fnpColors.white,
-    borderRadius: spacing.cardRadius,
-    borderWidth: 1,
-    borderColor: fnpColors.borderLight,
-    ...shadows.soft,
-  },
-  relatedLinkText: {
-    ...typography.body,
-    color: fnpColors.text,
-    fontWeight: "500",
-    flex: 1,
-    fontSize: 14,
-  },
-
-  // ===== FOOTER =====
-  footer: {
-    marginHorizontal: spacing.screen,
-    marginTop: spacing.xl,
-    borderRadius: spacing.cardRadius,
-    overflow: "hidden",
-    ...shadows.soft,
-  },
-  footerGradient: {
-    padding: spacing.xl,
-  },
-  footerContent: {
-    alignItems: "center",
-  },
-  footerTitle: {
-    ...typography.h3,
-    color: fnpColors.text,
-    marginTop: spacing.sm,
-    marginBottom: spacing.xs,
-    fontSize: 18,
+  // ── Footer note ───────────────────────────────────────────
+  footerNote: {
+    padding: 20,
+    backgroundColor: colors.creamDark,
+    borderRadius: 12,
   },
   footerText: {
-    ...typography.body,
-    color: fnpColors.textMuted,
-    textAlign: "center",
+    fontFamily: "DMSans_400Regular",
+    fontSize: 13,
     lineHeight: 22,
-    marginBottom: spacing.md,
+    color: colors.textSecondary,
   },
-  contactBtn: {
-    borderRadius: 16,
-    overflow: "hidden",
-    ...shadows.medium,
-  },
-  contactBtnGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-  },
-  contactBtnText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-
-  // ===== SPACER =====
-  bottomSpacer: {
-    height: 20,
+  footerLink: {
+    fontFamily: "DMSans_500Medium",
+    color: colors.primary,
   },
 });

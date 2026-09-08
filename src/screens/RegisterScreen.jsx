@@ -133,8 +133,11 @@ export function RegisterScreen({ navigation }) {
         }
         break;
       case "phone":
-        if (value?.trim() && !/^\d{10}$/.test(value.trim())) {
-          error = "Phone must be a 10-digit number";
+        if (value && value.trim()) {
+          const cleanPhone = value.replace(/\D/g, "");
+          if (cleanPhone.length < 10 || cleanPhone.length > 15) {
+            error = "Phone must be a valid 10-digit number";
+          }
         }
         break;
       case "password":
@@ -190,6 +193,7 @@ export function RegisterScreen({ navigation }) {
       const normalizedEmail = form.email.trim().toLowerCase();
       await greenFibreAuthService.register({
         full_name: form.name.trim(),
+        name: form.name.trim(),
         email: normalizedEmail,
         phone: form.phone.trim() || undefined,
         password: form.password,
@@ -200,7 +204,11 @@ export function RegisterScreen({ navigation }) {
           type: "success",
         }),
       );
-      navigation.replace("VerifyEmail", { email: normalizedEmail });
+      try {
+        navigation.replace("VerifyEmail", { email: normalizedEmail });
+      } catch (_) {
+        navigation.navigate("VerifyEmail", { email: normalizedEmail });
+      }
     } catch (e) {
       const message =
         e instanceof Error

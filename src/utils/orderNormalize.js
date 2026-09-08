@@ -90,15 +90,24 @@ export function normalizeCreateOrderResponse(responseData) {
 }
 
 export function buildShippingAddressFromForm(form) {
+    if (!form) return {};
+    
+    // Combine house/flat/building and street/area if separated
+    const fullStreetAddress = [
+        form.houseNo?.trim(),
+        form.street?.trim() || form.addressLine1?.trim() || form.streetAddress?.trim()
+    ].filter(Boolean).join(', ');
+
     return {
         fullName: form.fullName?.trim() || '',
         phone: String(form.phone || '').replace(/\D/g, '').slice(-10),
-        companyName: form.companyName?.trim() || '',
-        streetAddress: form.addressLine1?.trim() || form.streetAddress?.trim() || '',
-        landmark: form.addressLine2?.trim() || form.landmark?.trim() || '',
+        companyName: form.companyName?.trim() || form.addressType || '',
+        streetAddress: fullStreetAddress || form.addressLine1?.trim() || form.streetAddress?.trim() || '',
+        landmark: form.landmark?.trim() || form.addressLine2?.trim() || '',
         city: form.city?.trim() || '',
         state: form.state?.trim() || '',
         pincode: String(form.pinCode || form.pincode || '').replace(/\D/g, '').slice(0, 6),
         email: form.email?.trim() || '',
+        deliveryInstructions: form.deliveryInstructions?.trim() || '',
     };
 }

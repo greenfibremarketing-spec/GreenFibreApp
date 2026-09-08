@@ -14,6 +14,7 @@ import {
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { DrawerActions } from "@react-navigation/native";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
   selectWishlistProducts,
@@ -123,10 +124,11 @@ export function WishlistScreen({ navigation }) {
     }
 
     try {
+      const targetProductId = product._id || product.id;
       if (isAuthenticated) {
         await dispatch(
           addToCart({
-            productId: product._id,
+            productId: targetProductId,
             colorIndex: validation.colorIndex,
             quantity: 1,
           }),
@@ -134,7 +136,7 @@ export function WishlistScreen({ navigation }) {
       } else {
         await dispatch(
           addToGuestCart({
-            productId: product._id,
+            productId: targetProductId,
             colorIndex: validation.colorIndex,
             quantity: 1,
           }),
@@ -270,10 +272,11 @@ export function WishlistScreen({ navigation }) {
                   continue;
                 }
 
+                const targetProductId = product._id || product.id;
                 if (isAuthenticated) {
                   await dispatch(
                     addToCart({
-                      productId: product._id,
+                      productId: targetProductId,
                       colorIndex: validation.colorIndex,
                       quantity: 1,
                     }),
@@ -281,7 +284,7 @@ export function WishlistScreen({ navigation }) {
                 } else {
                   await dispatch(
                     addToGuestCart({
-                      productId: product._id,
+                      productId: targetProductId,
                       colorIndex: validation.colorIndex,
                       quantity: 1,
                     }),
@@ -452,7 +455,7 @@ export function WishlistScreen({ navigation }) {
   if (!isAuthenticated) {
     return (
       <ScreenContainer
-        onMenuPress={() => navigation.openDrawer()}
+        onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         headerTitle="Wishlist"
       >
         <EmptyState
@@ -469,7 +472,7 @@ export function WishlistScreen({ navigation }) {
   if (loading && wishlistProducts.length === 0) {
     return (
       <ScreenContainer
-        onMenuPress={() => navigation.openDrawer()}
+        onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         headerTitle="Wishlist"
       >
         <View style={styles.loadingContainer}>
@@ -490,7 +493,7 @@ export function WishlistScreen({ navigation }) {
   if (wishlistProducts.length === 0) {
     return (
       <ScreenContainer
-        onMenuPress={() => navigation.openDrawer()}
+        onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         headerTitle="Wishlist"
       >
         <EmptyState
@@ -513,7 +516,7 @@ export function WishlistScreen({ navigation }) {
 
   return (
     <ScreenContainer
-      onMenuPress={() => navigation.openDrawer()}
+      onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
       headerTitle="Wishlist"
       headerRight={
         <View style={styles.headerRight}>

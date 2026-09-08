@@ -13,7 +13,7 @@ import {
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, DrawerActions } from "@react-navigation/native";
 import { brand, footerBadges } from "../data/content";
 import { images } from "../data/images";
 import { colors, spacing, typography, shadows } from "../theme";
@@ -271,7 +271,7 @@ export function ProfileScreen() {
 
   return (
     <ScreenContainer
-      onMenuPress={() => drawerNav.openDrawer()}
+      onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
       headerTitle="Profile"
       headerRight={
         <TouchableOpacity

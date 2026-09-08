@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, DrawerActions } from "@react-navigation/native";
 import { formatPrice } from "../utils/helpers";
 import { spacing, shadows } from "../theme";
 import { ScreenContainer } from "../components/common/ScreenContainer";
@@ -74,7 +74,7 @@ export function TrackOrderScreen({ route }) {
   if (!isAuthenticated) {
     return (
       <ScreenContainer
-        onMenuPress={() => navigation.openDrawer()}
+        onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         headerTitle="Track Order"
       >
         <View style={styles.centered}>
@@ -96,7 +96,7 @@ export function TrackOrderScreen({ route }) {
   if (!orderId) {
     return (
       <ScreenContainer
-        onMenuPress={() => navigation.openDrawer()}
+        onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         headerTitle="Track Order"
       >
         <ScrollView contentContainerStyle={styles.listContent}>
@@ -139,7 +139,7 @@ export function TrackOrderScreen({ route }) {
   if (loading && (!order || order._id !== orderId)) {
     return (
       <ScreenContainer
-        onMenuPress={() => navigation.openDrawer()}
+        onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         headerTitle="Track Order"
       >
         <View style={styles.centered}>
@@ -153,7 +153,7 @@ export function TrackOrderScreen({ route }) {
   if (error && (!order || order._id !== orderId)) {
     return (
       <ScreenContainer
-        onMenuPress={() => navigation.openDrawer()}
+        onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         headerTitle="Track Order"
       >
         <View style={styles.centered}>
@@ -173,7 +173,7 @@ export function TrackOrderScreen({ route }) {
   if (!displayOrder) {
     return (
       <ScreenContainer
-        onMenuPress={() => navigation.openDrawer()}
+        onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         headerTitle="Track Order"
       >
         <View style={styles.centered}>
@@ -195,7 +195,7 @@ export function TrackOrderScreen({ route }) {
 
   return (
     <ScreenContainer
-      onMenuPress={() => navigation.openDrawer()}
+      onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
       headerTitle="Track Order"
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>

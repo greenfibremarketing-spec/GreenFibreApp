@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { DrawerActions } from "@react-navigation/native";
 import { colors, spacing, typography, shadows } from "../theme";
 import { ScreenContainer } from "../components/common/ScreenContainer";
 import { SectionHeader } from "../components/common/SectionHeader";
@@ -96,7 +97,11 @@ export function ProductListingScreen({ navigation, route }) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    dispatch(fetchProductsByCategory({ categorySlug }));
+    if (categorySlug && categorySlug !== "all") {
+      dispatch(fetchProductsByCategory({ categorySlug }));
+    } else {
+      dispatch(fetchProducts());
+    }
   }, [dispatch, categorySlug]);
 
   // Filter and sort products
@@ -235,7 +240,13 @@ export function ProductListingScreen({ navigation, route }) {
 
   return (
     <ScreenContainer
-      onMenuPress={() => navigation.openDrawer()}
+      onMenuPress={() => {
+        if (navigation.canGoBack()) {
+          navigation.goBack();
+        } else {
+          navigation.dispatch(DrawerActions.openDrawer());
+        }
+      }}
       headerTitle={categoryName}
       headerRight={
         <View style={styles.headerRightContainer}>

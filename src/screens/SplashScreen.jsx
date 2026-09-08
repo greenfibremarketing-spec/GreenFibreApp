@@ -14,8 +14,8 @@ export function SplashScreen() {
     }
 
     const timer = setTimeout(() => {
-      navigation.replace("Onboarding");
-    }, 1500);
+      navigation.replace("Main");
+    }, 1200);
 
     return () => clearTimeout(timer);
   }, [hydrated, navigation]);

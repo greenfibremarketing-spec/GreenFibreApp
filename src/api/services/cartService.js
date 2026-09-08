@@ -36,7 +36,11 @@ export const cartService = {
         await request({
             method: 'POST',
             url: '/cart/add',
-            data: { productId, colorIndex, quantity },
+            data: {
+                productId: String(productId),
+                colorIndex: Number(colorIndex) || 0,
+                quantity: Number(quantity) || 1,
+            },
         });
         return this.getCart();
     },
@@ -45,7 +49,11 @@ export const cartService = {
         await request({
             method: 'PATCH',
             url: '/cart/update',
-            data: { productId, colorIndex, quantity },
+            data: {
+                productId: String(productId),
+                colorIndex: Number(colorIndex) || 0,
+                quantity: Number(quantity) || 1,
+            },
         });
         return this.getCart();
     },
@@ -54,7 +62,7 @@ export const cartService = {
         await request({
             method: 'DELETE',
             url: `/cart/remove/${encodeURIComponent(productId)}`,
-            params: { colorIndex },
+            params: { colorIndex: Number(colorIndex) || 0 },
         });
         return this.getCart();
     },

@@ -1,35 +1,28 @@
+// src/screens/ContactScreen.jsx
+// Green Fibre — Premium editorial contact layout
+// Studio photo top, warm intro, WhatsApp as distinct pill CTA
+
 import React, { useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   Alert,
-  Image,
-  ImageBackground,
   TouchableOpacity,
   ScrollView,
   Linking,
 } from "react-native";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient";
+import Animated, { FadeInDown } from "react-native-reanimated";
+import { useNavigation, DrawerActions } from "@react-navigation/native";
 import { contactContent, brand } from "../data/content";
-import { colors, spacing, typography, shadows } from "../theme";
+import { colors, spacing } from "../theme";
 import { ScreenContainer } from "../components/common/ScreenContainer";
-import { SectionHeader } from "../components/common/SectionHeader";
 import { Input } from "../components/common/Input";
 import { Button } from "../components/common/Button";
 import { contactService } from "../api/services/contactService";
-
-// FNP Brand Colors (enhanced)
-const fnpColors = {
-  primary: "#2E7D32",
-  primaryLight: "#E8F5E9",
-  primaryDark: "#1B5E20",
-  gold: "#FFD700",
-  goldLight: "#FFF8E1",
-  success: "#4CAF50",
-  whatsapp: "#25D366",
-};
 
 export function ContactScreen() {
   const navigation = useNavigation();
@@ -42,578 +35,286 @@ export function ContactScreen() {
   });
 
   const handleSubmit = async () => {
+    if (!form.fullName.trim() || !form.email.trim() || !form.message.trim()) {
+      Alert.alert("Please complete the form", "Name, email and message are required.");
+      return;
+    }
     setLoading(true);
     try {
       await contactService.submitContactForm(form);
       Alert.alert(
-        "🎉 Message Sent!",
-        "Thank you for reaching out! We'll get back to you within 24 hours.",
-        [{ text: "OK", onPress: () => resetForm() }],
+        "Message sent",
+        "Thank you for reaching out. We'll reply within one working day.",
+        [{ text: "Done", onPress: () => setForm({ fullName: "", email: "", phone: "", message: "" }) }],
       );
     } catch (e) {
       Alert.alert(
-        "❌ Error",
-        e instanceof Error
-          ? e.message
-          : "Failed to send message. Please try again.",
+        "Couldn't send",
+        e instanceof Error ? e.message : "Please try again or reach us on WhatsApp.",
       );
     } finally {
       setLoading(false);
     }
   };
 
-  const resetForm = () => {
-    setForm({ fullName: "", email: "", phone: "", message: "" });
+  const openWhatsApp = () => {
+    const phone = brand?.supportPhone || "+919876543210";
+    const msg = encodeURIComponent("Hi Green Fibre! I'd like to know more about your products.");
+    Linking.openURL(`whatsapp://send?phone=${phone}&text=${msg}`).catch(() =>
+      Linking.openURL(`https://wa.me/${phone}?text=${msg}`),
+    );
   };
 
-  // Quick contact actions
-  const quickActions = [
-    {
-      id: "call",
-      icon: "call-outline",
-      label: "Call Us",
-      value: brand?.supportPhone || "+91-98765-43210",
-      color: fnpColors.primary,
-      action: () =>
-        Linking.openURL(`tel:${brand?.supportPhone || "+919876543210"}`),
-    },
-    {
-      id: "whatsapp",
-      icon: "logo-whatsapp",
-      label: "WhatsApp",
-      value: "Chat with us",
-      color: fnpColors.whatsapp,
-      action: () =>
-        Linking.openURL(
-          `whatsapp://send?phone=${brand?.supportPhone || "+919876543210"}&text=Hi! I need help with my order.`,
-        ),
-    },
-    {
-      id: "email",
-      icon: "mail-outline",
-      label: "Email",
-      value: brand?.supportEmail || "support@greenfibre.com",
-      color: fnpColors.primaryDark,
-      action: () =>
-        Linking.openURL(
-          `mailto:${brand?.supportEmail || "support@greenfibre.com"}`,
-        ),
-    },
-    // {
-    //   id: "chat",
-    //   icon: "chatbubble-outline",
-    //   label: "Live Chat",
-    //   value: "Available 24/7",
-    //   color: "#FF6F00",
-    //   action: () => Alert.alert("Live Chat", "Our team is ready to help you!"),
-    // },
-  ];
+  const openEmail = () =>
+    Linking.openURL(`mailto:${brand?.supportEmail || "support@greenfibre.com"}`);
 
-  // Social media links
-  // const socialLinks = [
-  //   { id: "instagram", icon: "logo-instagram", color: "#E4405F" },
-  //   { id: "facebook", icon: "logo-facebook", color: "#1877F2" },
-  //   { id: "youtube", icon: "logo-youtube", color: "#FF0000" },
-  //   { id: "twitter", icon: "logo-twitter", color: "#1DA1F2" },
-  // ];
-  const socialLinks = [
-    {
-      id: "instagram",
-      icon: "logo-instagram",
-      color: "#E4405F",
-      url: "https://www.instagram.com/your_username",
-    },
-    {
-      id: "facebook",
-      icon: "logo-facebook",
-      color: "#1877F2",
-      url: "https://www.facebook.com/your_page",
-    },
-    {
-      id: "youtube",
-      icon: "logo-youtube",
-      color: "#FF0000",
-      url: "https://www.youtube.com/@your_channel",
-    },
-    {
-      id: "twitter",
-      icon: "logo-twitter",
-      color: "#1DA1F2",
-      url: "https://x.com/your_username",
-    },
-  ];
-  const openSocialLink = async (url) => {
-    try {
-      const supported = await Linking.canOpenURL(url);
-
-      if (supported) {
-        await Linking.openURL(url);
-      } else {
-        Alert.alert("Error", "Unable to open the link.");
-      }
-    } catch (error) {
-      Alert.alert("Error", "Something went wrong.");
-    }
-  };
-
-  // Business hours with status
-  const getBusinessStatus = () => {
-    const now = new Date();
-    const hour = now.getHours();
-    const day = now.getDay();
-    // Assuming 9 AM - 9 PM, 7 days a week
-    if (hour >= 9 && hour < 21) {
-      return {
-        status: "Open Now",
-        color: fnpColors.success,
-        icon: "time-outline",
-      };
-    }
-    return { status: "Closed", color: "#FF5252", icon: "time-outline" };
-  };
-
-  const businessStatus = getBusinessStatus();
-
-  // Safe data access with fallbacks
-  const contactTitle = contactContent?.title || "Get in Touch";
-  const contactSubtitle =
-    contactContent?.subtitle || "We love hearing from you!";
-  const businessHours = contactContent?.businessHours || [
-    { day: "Monday - Friday", hours: "9:00 AM - 9:00 PM" },
-    { day: "Saturday - Sunday", hours: "10:00 AM - 8:00 PM" },
-  ];
+  const callUs = () =>
+    Linking.openURL(`tel:${brand?.supportPhone || "+919876543210"}`);
 
   return (
-    <ScreenContainer
-      onMenuPress={() => navigation.openDrawer()}
-      headerTitle="Contact Us"
-      headerRight={
-        <TouchableOpacity
-          onPress={() => Alert.alert("FAQ", "Frequently Asked Questions")}
-          activeOpacity={0.7}
-        >
-          <Ionicons
-            name="help-circle-outline"
-            size={24}
-            color={fnpColors.primary}
+    <ScreenContainer onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}>
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
+
+        {/* ── STUDIO PHOTO ─────────────────────────────────── */}
+        <View style={styles.studioPhoto}>
+          <Image
+            source={{ uri: "https://images.unsplash.com/photo-1556761175-4b46a572b786?w=900&q=80" }}
+            style={styles.studioImage}
+            contentFit="cover"
+            transition={300}
           />
-        </TouchableOpacity>
-      }
-    >
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* ===== HERO BANNER ===== */}
-        <ImageBackground
-          source={{
-            uri: "https://images.unsplash.com/photo-1589533614927-49467b5e9f1b?w=800",
-          }}
-          style={styles.heroBanner}
-          imageStyle={styles.heroImage}
-        >
-          <View style={styles.heroOverlay}>
-            <Text style={styles.heroTitle}>💐 We're Here to Help!</Text>
-            <Text style={styles.heroSubtitle}>
-              Got questions about your order, gifts, or delivery? Reach out to
-              us anytime.
-            </Text>
-          </View>
-        </ImageBackground>
-
-        {/* ===== SECTION HEADER ===== */}
-        <View style={styles.sectionHeaderContainer}>
-          <SectionHeader title={contactTitle} subtitle={contactSubtitle} />
-        </View>
-
-        {/* ===== QUICK CONTACT CARDS ===== */}
-        <View style={styles.quickActionsGrid}>
-          {quickActions.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={[styles.quickActionCard, { borderColor: item.color }]}
-              onPress={item.action}
-              activeOpacity={0.7}
-            >
-              <View
-                style={[
-                  styles.iconCircle,
-                  { backgroundColor: item.color + "15" },
-                ]}
-              >
-                <Ionicons name={item.icon} size={28} color={item.color} />
-              </View>
-              <Text style={styles.quickActionLabel}>{item.label}</Text>
-              <Text style={styles.quickActionValue} numberOfLines={1}>
-                {item.value}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* ===== BUSINESS HOURS CARD ===== */}
-        <View style={styles.hoursCard}>
-          <View style={styles.hoursHeader}>
-            <View style={styles.hoursTitleRow}>
-              <Ionicons
-                name="business-outline"
-                size={24}
-                color={fnpColors.primary}
-              />
-              <Text style={styles.hoursCardTitle}>Business Hours</Text>
-            </View>
-            <View
-              style={[
-                styles.statusBadge,
-                { backgroundColor: businessStatus.color + "15" },
-              ]}
-            >
-              <Ionicons
-                name={businessStatus.icon}
-                size={14}
-                color={businessStatus.color}
-              />
-              <Text
-                style={[styles.statusText, { color: businessStatus.color }]}
-              >
-                {businessStatus.status}
-              </Text>
-            </View>
-          </View>
-
-          {businessHours.map((h, i) => (
-            <View key={i} style={styles.hoursRow}>
-              <Text style={styles.hoursDay}>{h.day}</Text>
-              <Text style={styles.hoursTime}>{h.hours}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* ===== SOCIAL MEDIA ===== */}
-        <View style={styles.socialSection}>
-          <Text style={styles.socialTitle}>Follow Us for Updates 🎁</Text>
-
-          <View style={styles.socialGrid}>
-            {socialLinks.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={[
-                  styles.socialButton,
-                  { backgroundColor: item.color + "10" },
-                ]}
-                onPress={() => openSocialLink(item.url)}
-                activeOpacity={0.7}
-              >
-                <Ionicons name={item.icon} size={30} color={item.color} />
-              </TouchableOpacity>
-            ))}
+          <LinearGradient
+            colors={["transparent", colors.background]}
+            start={{ x: 0, y: 0.4 }}
+            end={{ x: 0, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={styles.studioOverlay}>
+            <Text style={styles.studioOverline}>GET IN TOUCH</Text>
+            <Text style={styles.studioTitle}>We'd love to{"\n"}hear from you</Text>
           </View>
         </View>
 
-        {/* ===== FORM CARD ===== */}
-        <View style={styles.formCard}>
-          <View style={styles.formHeader}>
-            <Ionicons
-              name="create-outline"
-              size={24}
-              color={fnpColors.primary}
-            />
-            <Text style={styles.formTitle}>Send Us a Message</Text>
-          </View>
-          <Text style={styles.formSubtitle}>
-            Fill in the details below, and we'll get back to you shortly.
+        {/* ── CONTACT BODY ─────────────────────────────────── */}
+        <Animated.View entering={FadeInDown.duration(400)} style={styles.body}>
+
+          {/* Warm intro */}
+          <Text style={styles.intro}>
+            Our small team is based in India and typically replies within one working day. 
+            For urgent enquiries, WhatsApp is fastest.
           </Text>
 
+          {/* ── WHATSAPP PILL — PROMINENT ─────────────────── */}
+          <Button
+            title="Chat on WhatsApp"
+            variant="whatsapp"
+            fullWidth
+            onPress={openWhatsApp}
+            icon={<Ionicons name="logo-whatsapp" size={20} color="#fff" />}
+            style={styles.whatsappBtn}
+          />
+
+          {/* ── SECONDARY CONTACT LINKS ───────────────────── */}
+          <View style={styles.contactLinks}>
+            <TouchableOpacity style={styles.contactLink} onPress={callUs}>
+              <Ionicons name="call-outline" size={16} color={colors.primary} />
+              <Text style={styles.contactLinkText}>
+                {brand?.supportPhone || "+91 98765 43210"}
+              </Text>
+            </TouchableOpacity>
+            <View style={styles.linkDivider} />
+            <TouchableOpacity style={styles.contactLink} onPress={openEmail}>
+              <Ionicons name="mail-outline" size={16} color={colors.primary} />
+              <Text style={styles.contactLinkText}>
+                {brand?.supportEmail || "support@greenfibre.com"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* ── DIVIDER ───────────────────────────────────── */}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerLabel}>or send a message</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* ── CONTACT FORM ──────────────────────────────── */}
           <Input
-            label="Full Name"
+            label="Your name"
             value={form.fullName}
-            onChangeText={(v) => setForm({ ...form, fullName: v })}
-            required
+            onChangeText={(t) => setForm((f) => ({ ...f, fullName: t }))}
+            placeholder="Priya Sharma"
             icon="person-outline"
-            placeholder="Enter your full name"
-          />
-
-          <Input
-            label="Email Address"
-            value={form.email}
-            onChangeText={(v) => setForm({ ...form, email: v })}
             required
-            keyboardType="email-address"
-            icon="mail-outline"
-            placeholder="your@email.com"
           />
-
           <Input
-            label="Phone Number"
-            value={form.phone}
-            onChangeText={(v) => setForm({ ...form, phone: v })}
-            keyboardType="phone-pad"
-            icon="call-outline"
-            placeholder="+91-98765-43210"
+            label="Email address"
+            value={form.email}
+            onChangeText={(t) => setForm((f) => ({ ...f, email: t }))}
+            placeholder="priya@email.com"
+            icon="mail-outline"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            required
           />
-
+          <Input
+            label="Phone (optional)"
+            value={form.phone}
+            onChangeText={(t) => setForm((f) => ({ ...f, phone: t }))}
+            placeholder="+91 9876543210"
+            icon="call-outline"
+            keyboardType="phone-pad"
+          />
           <Input
             label="Message"
             value={form.message}
-            onChangeText={(v) => setForm({ ...form, message: v })}
-            required
+            onChangeText={(t) => setForm((f) => ({ ...f, message: t }))}
+            placeholder="Tell us how we can help…"
             multiline
             numberOfLines={5}
-            style={styles.textArea}
-            placeholder="Tell us how we can help you..."
+            textAlignVertical="top"
+            style={{ paddingTop: 14, minHeight: 120 }}
+            required
           />
 
           <Button
-            title="Send Message 💌"
+            title="Send message"
             onPress={handleSubmit}
             loading={loading}
-            style={styles.submitButton}
+            fullWidth
+            style={styles.sendBtn}
           />
-        </View>
 
-        {/* ===== FOOTER INFO ===== */}
-        <View style={styles.footerNote}>
-          <Ionicons
-            name="shield-checkmark-outline"
-            size={16}
-            color={colors.textMuted || "#999"}
-          />
-          <Text style={styles.footerText}>
-            We typically respond within 24 hours. Your privacy matters to us.
-          </Text>
-        </View>
+          {/* ── OFFICE NOTE ───────────────────────────────── */}
+          <View style={styles.officeNote}>
+            <Ionicons name="location-outline" size={16} color={colors.textSecondary} />
+            <Text style={styles.officeNoteText}>
+              Green Fibre · Made in India · Replies in 1 working day
+            </Text>
+          </View>
+        </Animated.View>
       </ScrollView>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContent: {
-    paddingBottom: spacing?.xxxl || 40,
-  },
-
-  // ===== HERO =====
-  heroBanner: {
-    height: 180,
-    marginHorizontal: spacing?.screen || 16,
-    marginTop: spacing?.md || 12,
-    borderRadius: spacing?.cardRadius || 20,
-    overflow: "hidden",
-  },
-  heroImage: {
-    borderRadius: spacing?.cardRadius || 20,
-  },
-  heroOverlay: {
+  container: {
     flex: 1,
-    backgroundColor: "rgba(233, 30, 99, 0.75)",
-    padding: spacing?.xl || 24,
-    justifyContent: "center",
-    borderRadius: spacing?.cardRadius || 20,
-  },
-  heroTitle: {
-    fontSize: 26,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    marginBottom: spacing?.xs || 4,
-  },
-  heroSubtitle: {
-    fontSize: 14,
-    color: "#FFFFFF",
-    opacity: 0.9,
-    lineHeight: 20,
+    backgroundColor: colors.background,
   },
 
-  // ===== SECTION =====
-  sectionHeaderContainer: {
-    marginTop: spacing?.lg || 16,
-    marginBottom: spacing?.md || 12,
+  // ── Studio photo top ─────────────────────────────────────
+  studioPhoto: {
+    height: 280,
+    position: "relative",
+    backgroundColor: colors.primaryDark,
+  },
+  studioImage: {
+    width: "100%",
+    height: "100%",
+  },
+  studioOverlay: {
+    position: "absolute",
+    bottom: 28,
+    left: 24,
+  },
+  studioOverline: {
+    fontFamily: "DMMono_500Medium",
+    fontSize: 10,
+    letterSpacing: 2,
+    color: colors.cream,
+    opacity: 0.7,
+    marginBottom: 8,
+  },
+  studioTitle: {
+    fontFamily: "PlayfairDisplay_700Bold",
+    fontSize: 30,
+    lineHeight: 38,
+    color: colors.cream,
   },
 
-  // ===== QUICK ACTIONS =====
-  quickActionsGrid: {
+  // ── Body ────────────────────────────────────────────────
+  body: {
+    padding: spacing.screen,
+    paddingTop: 28,
+    paddingBottom: 60,
+  },
+  intro: {
+    fontFamily: "DMSans_400Regular",
+    fontSize: 15,
+    lineHeight: 25,
+    color: colors.textSecondary,
+    marginBottom: 24,
+  },
+
+  // ── WhatsApp CTA ─────────────────────────────────────────
+  whatsappBtn: {
+    marginBottom: 20,
+  },
+
+  // ── Contact links ────────────────────────────────────────
+  contactLinks: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    marginHorizontal: spacing?.screen || 16,
-    gap: spacing?.md || 12,
-    marginBottom: spacing?.lg || 16,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 0,
+    marginBottom: 32,
   },
-  quickActionCard: {
+  contactLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
     flex: 1,
-    minWidth: "45%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: spacing?.cardRadius || 20,
-    padding: spacing?.md || 12,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  iconCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
     justifyContent: "center",
-    alignItems: "center",
-    marginBottom: spacing?.xs || 4,
   },
-  quickActionLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#1A1A1A",
-    marginBottom: 2,
+  contactLinkText: {
+    fontFamily: "DMSans_500Medium",
+    fontSize: 13,
+    color: colors.primary,
   },
-  quickActionValue: {
-    fontSize: 11,
-    color: "#999",
-    textAlign: "center",
+  linkDivider: {
+    width: 1,
+    height: 18,
+    backgroundColor: colors.border,
   },
 
-  // ===== HOURS CARD =====
-  hoursCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: spacing?.cardRadius || 20,
-    padding: spacing?.xl || 24,
-    marginHorizontal: spacing?.screen || 16,
-    marginBottom: spacing?.lg || 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  hoursHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: spacing?.md || 12,
-  },
-  hoursTitleRow: {
+  // ── Section divider ─────────────────────────────────────
+  divider: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing?.sm || 8,
+    gap: 12,
+    marginBottom: 28,
   },
-  hoursCardTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1A1A1A",
-    marginBottom: 0,
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
   },
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: spacing?.md || 12,
-    paddingVertical: spacing?.xs || 4,
-    borderRadius: 20,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  hoursRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: spacing?.sm || 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F5F5F5",
-  },
-  hoursDay: {
-    fontSize: 14,
-    color: "#666",
-    fontWeight: "500",
-  },
-  hoursTime: {
-    fontSize: 14,
-    color: "#1A1A1A",
-    fontWeight: "600",
+  dividerLabel: {
+    fontFamily: "DMMono_400Regular",
+    fontSize: 10,
+    letterSpacing: 1,
+    color: colors.textMuted,
   },
 
-  // ===== SOCIAL =====
-  socialSection: {
-    marginHorizontal: spacing?.screen || 16,
-    marginBottom: spacing?.lg || 16,
-  },
-  socialTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1A1A1A",
-    textAlign: "center",
-    marginBottom: spacing?.md || 12,
-  },
-  socialGrid: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: spacing?.lg || 16,
-  },
-  socialButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+  // ── Send button ──────────────────────────────────────────
+  sendBtn: {
+    marginTop: 8,
+    marginBottom: 24,
   },
 
-  // ===== FORM =====
-  formCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: spacing?.cardRadius || 20,
-    padding: spacing?.xl || 24,
-    marginHorizontal: spacing?.screen || 16,
-    marginBottom: spacing?.lg || 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  formHeader: {
+  // ── Office note ──────────────────────────────────────────
+  officeNote: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing?.sm || 8,
-    marginBottom: spacing?.xs || 4,
+    gap: 8,
+    paddingTop: 8,
   },
-  formTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1A1A1A",
-    marginBottom: 0,
-  },
-  formSubtitle: {
-    fontSize: 12,
-    color: "#999",
-    marginBottom: spacing?.lg || 16,
-  },
-  textArea: {
-    height: 120,
-    textAlignVertical: "top",
-    paddingTop: spacing?.md || 12,
-  },
-  submitButton: {
-    marginTop: spacing?.md || 12,
-    backgroundColor: fnpColors.primary,
-  },
-
-  // ===== FOOTER =====
-  footerNote: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing?.xs || 4,
-    marginHorizontal: spacing?.screen || 16,
-    paddingVertical: spacing?.md || 12,
-  },
-  footerText: {
-    fontSize: 12,
-    color: "#999",
-    textAlign: "center",
+  officeNoteText: {
+    fontFamily: "DMSans_400Regular",
+    fontSize: 13,
+    color: colors.textMuted,
+    flex: 1,
   },
 });

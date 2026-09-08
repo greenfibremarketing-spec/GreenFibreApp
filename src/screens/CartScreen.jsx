@@ -1,35 +1,37 @@
-import React, { useMemo, useState, useRef } from "react";
+// src/screens/CartScreen.jsx
+// Green Fibre — Modern, Spacious & Elegant Cart Screen with Interactive Coupon System
+
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Animated,
+  TextInput,
   Dimensions,
   Alert,
-  Modal,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { Image } from "expo-image";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Swipeable } from "react-native-gesture-handler";
-import AnimatedComponent, {
+import { DrawerActions } from "@react-navigation/native";
+import Animated, {
   FadeInDown,
   FadeInUp,
+  FadeOut,
   Layout,
 } from "react-native-reanimated";
 import {
   formatPrice,
-  calculateCartTotal,
   getShippingCost,
   FREE_SHIPPING_THRESHOLD,
 } from "../utils/helpers";
 import { resolveImageUrl, PLACEHOLDER_IMAGE } from "../utils/catalogNormalize";
-import { colors, spacing, typography, shadows } from "../theme";
+import { spacing, shadows } from "../theme";
 import { ScreenContainer } from "../components/common/ScreenContainer";
-import { Button } from "../components/common/Button";
 import { EmptyState } from "../components/common/EmptyState";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
@@ -39,70 +41,48 @@ import {
   selectCartLoading,
 } from "../store/slices/cartSlice";
 import {
+  fetchCart,
   updateCartItem,
   removeCartItem,
   clearCart as clearServerCart,
   updateGuestCartLine,
   removeGuestCartLine,
+  loadGuestCartState,
 } from "../store/thunks/cartThunks";
+import { fetchProducts } from "../store/slices/productsSlice";
 import { getCartLineKey } from "../utils/cartNormalize";
 
 const { width } = Dimensions.get("window");
 
-// Nature-inspired color palette
-const natureColors = {
-  primary: "#2E7D32",
+// Premium Green Fibre Brand Colors
+const brandColors = {
+  primary: "#1C4A2A",
+  primaryMedium: "#2E7D32",
   primaryLight: "#E8F5E9",
-  primaryDark: "#1B5E20",
-  secondary: "#F57C00",
-  secondaryLight: "#FFF3E0",
-  gold: "#FFD700",
-  goldLight: "#FFF8E1",
+  primaryDark: "#13351E",
+  accent: "#D4AF37",
+  accentLight: "#FFF9E6",
+  cream: "#FAF7F2",
+  creamDark: "#EDE8DF",
   white: "#FFFFFF",
   text: "#1A1A1A",
-  textSecondary: "#4A4A4A",
-  textMuted: "#8D8D8D",
-  borderLight: "#E8E8E8",
-  success: "#4CAF50",
-  danger: "#E53935",
-  warning: "#FF9800",
-  cream: "#FFF8F0",
-  leafGreen: "#43A047",
-  barkBrown: "#795548",
-  skyBlue: "#64B5F6",
-  sunset: "#FF7043",
+  textSecondary: "#555555",
+  textMuted: "#888888",
+  borderLight: "#EEEEEE",
+  borderMedium: "#E0E0E0",
+  success: "#2E7D32",
+  successLight: "#E8F5E9",
+  danger: "#D32F2F",
+  dangerLight: "#FFEBEE",
+  warning: "#E65100",
+  warningLight: "#FFF3E0",
 };
 
-// Recommended products (mock data) - Nature themed
-const recommendedProducts = [
-  {
-    id: "rec1",
-    name: "Bamboo Toothbrush Set",
-    price: 299,
-    image: "https://images.unsplash.com/photo-1607613009820-a29f7bb81c04?w=400",
-    ecoScore: 95,
-  },
-  {
-    id: "rec2",
-    name: "Reusable Straw Set",
-    price: 199,
-    image: "https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=400",
-    ecoScore: 90,
-  },
-  {
-    id: "rec3",
-    name: "Eco Plant Pot Set",
-    price: 399,
-    image: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=400",
-    ecoScore: 92,
-  },
-  {
-    id: "rec4",
-    name: "Organic Cotton Bag",
-    price: 249,
-    image: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=400",
-    ecoScore: 98,
-  },
+// Available Promo Codes
+const AVAILABLE_COUPONS = [
+  { code: "GREEN10", discountPercent: 10, maxDiscount: 500, label: "10% OFF", desc: "10% off on all sustainable items" },
+  { code: "WELCOME50", flatDiscount: 50, minOrder: 299, label: "₹50 OFF", desc: "Flat ₹50 off on orders above ₹299" },
+  { code: "PLANT100", flatDiscount: 100, minOrder: 799, label: "₹100 OFF", desc: "Flat ₹100 off on orders above ₹799" },
 ];
 
 export function CartScreen({ navigation }) {
@@ -116,20 +96,32 @@ export function CartScreen({ navigation }) {
 
   const cartItems = isAuthenticated ? serverCartItems : guestCartItems;
 
-  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [selectedForBulk, setSelectedForBulk] = useState([]);
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const leafRotation = useRef(new Animated.Value(0)).current;
+  // Coupon state
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState(null); // { code, discountAmount, message }
+  const [couponError, setCouponError] = useState("");
+  const [couponApplying, setCouponApplying] = useState(false);
+
+  useEffect(() => {
+    if (products.length === 0) {
+      dispatch(fetchProducts());
+    }
+    if (isAuthenticated) {
+      dispatch(fetchCart());
+    } else {
+      dispatch(loadGuestCartState());
+    }
+  }, [dispatch, isAuthenticated, products.length]);
 
   const enrichedItems = useMemo(() => {
     return cartItems
       .map((item) => {
         const product =
-          item.product || products.find((p) => p._id === item.productId);
-        if (!product) {
-          return null;
-        }
+          item.product ||
+          products.find(
+            (p) => p._id === item.productId || p.id === item.productId
+          );
+        if (!product) return null;
 
         const rawImage =
           item.image ||
@@ -152,23 +144,94 @@ export function CartScreen({ navigation }) {
     ? serverTotalAmount
     : enrichedItems.reduce(
         (total, item) => total + (item.price || item.product?.price || 0) * item.quantity,
-        0,
+        0
       );
-  const shipping = getShippingCost(subtotal);
-  const total = subtotal + shipping;
+
+  const rawShipping = getShippingCost(subtotal);
+  const shipping = appliedCoupon?.code === "FREESHIP" ? 0 : rawShipping;
+
+  // Calculate dynamic coupon discount based on current subtotal
+  const discountAmount = useMemo(() => {
+    if (!appliedCoupon) return 0;
+    if (appliedCoupon.discountPercent) {
+      const calc = (subtotal * appliedCoupon.discountPercent) / 100;
+      return appliedCoupon.maxDiscount ? Math.min(calc, appliedCoupon.maxDiscount) : calc;
+    }
+    if (appliedCoupon.flatDiscount) {
+      return Math.min(appliedCoupon.flatDiscount, subtotal);
+    }
+    return appliedCoupon.discountAmount || 0;
+  }, [appliedCoupon, subtotal]);
+
+  const payableTotal = Math.max(0, subtotal - discountAmount + shipping);
   const itemCount = enrichedItems.reduce((sum, item) => sum + item.quantity, 0);
-  const freeShippingProgress = Math.min(
-    (subtotal / FREE_SHIPPING_THRESHOLD) * 100,
-    100,
-  );
+  const freeShippingProgress = Math.min((subtotal / FREE_SHIPPING_THRESHOLD) * 100, 100);
+
+  // Apply Coupon Logic
+  const handleApplyCoupon = (codeToApply) => {
+    const code = (codeToApply || couponInput).trim().toUpperCase();
+    setCouponError("");
+
+    if (!code) {
+      setCouponError("Please enter a coupon code");
+      return;
+    }
+
+    setCouponApplying(true);
+
+    setTimeout(() => {
+      setCouponApplying(false);
+      const matched = AVAILABLE_COUPONS.find((c) => c.code === code);
+
+      if (code === "FREESHIP") {
+        setAppliedCoupon({
+          code: "FREESHIP",
+          discountAmount: rawShipping,
+          message: "Free express delivery unlocked!",
+        });
+        setCouponInput("");
+        return;
+      }
+
+      if (!matched) {
+        setCouponError(`Coupon "${code}" is invalid or expired.`);
+        return;
+      }
+
+      if (matched.minOrder && subtotal < matched.minOrder) {
+        setCouponError(`Minimum order value of ${formatPrice(matched.minOrder)} required for "${matched.code}".`);
+        return;
+      }
+
+      let calcDiscount = 0;
+      if (matched.discountPercent) {
+        calcDiscount = Math.round((subtotal * matched.discountPercent) / 100);
+        if (matched.maxDiscount) calcDiscount = Math.min(calcDiscount, matched.maxDiscount);
+      } else if (matched.flatDiscount) {
+        calcDiscount = matched.flatDiscount;
+      }
+
+      setAppliedCoupon({
+        ...matched,
+        discountAmount: calcDiscount,
+        message: `Saved ${formatPrice(calcDiscount)} with ${matched.code}!`,
+      });
+      setCouponInput("");
+    }, 300);
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponError("");
+  };
 
   const handleQuantityUpdate = (item, quantity) => {
     const { productId, colorIndex } = item;
 
     if (quantity < 1) {
       Alert.alert(
-        "🌿 Remove Item",
-        "Are you sure you want to remove this item from your cart?",
+        "Remove Item",
+        `Remove "${item.product?.name || "this item"}" from your cart?`,
         [
           { text: "Cancel", style: "cancel" },
           {
@@ -176,7 +239,7 @@ export function CartScreen({ navigation }) {
             style: "destructive",
             onPress: () => handleRemoveItem(item),
           },
-        ],
+        ]
       );
       return;
     }
@@ -197,296 +260,55 @@ export function CartScreen({ navigation }) {
     }
   };
 
-  // Handle bulk selection
-  const toggleBulkSelection = (lineKey) => {
-    setSelectedForBulk((prev) => {
-      if (prev.includes(lineKey)) {
-        return prev.filter((id) => id !== lineKey);
-      }
-      return [...prev, lineKey];
-    });
-  };
-
-  // Handle bulk remove
-  const handleBulkRemove = () => {
-    if (selectedForBulk.length === 0) return;
-
+  const handleClearCart = () => {
     Alert.alert(
-      "🌿 Remove Items",
-      `Are you sure you want to remove ${selectedForBulk.length} items?`,
+      "Clear Shopping Bag",
+      "Are you sure you want to remove all items from your cart?",
       [
-        { text: "Cancel", style: "cancel" },
+        { text: "Keep Items", style: "cancel" },
         {
-          text: "Remove All",
+          text: "Clear All",
           style: "destructive",
           onPress: () => {
-            selectedForBulk.forEach((lineKey) => {
-              const item = enrichedItems.find((entry) => entry.lineKey === lineKey);
-              if (item) {
-                handleRemoveItem(item);
-              }
-            });
-            setSelectedForBulk([]);
+            if (isAuthenticated) {
+              dispatch(clearServerCart());
+            } else {
+              enrichedItems.forEach((entry) => handleRemoveItem(entry));
+            }
+            handleRemoveCoupon();
           },
         },
-      ],
+      ]
     );
   };
 
-  // Handle checkout
-  const handleCheckout = () => {
-    setShowCheckoutModal(true);
-    setIsProcessing(true);
-    setTimeout(() => {
-      setIsProcessing(false);
-      setShowCheckoutModal(false);
-      navigation.navigate("Checkout");
-    }, 1500);
+  const handleProceedToCheckout = () => {
+    navigation.navigate("Checkout", {
+      couponCode: appliedCoupon?.code || "",
+      discountAmount,
+    });
   };
-
-  // Handle scroll for leaf animation
-  const handleScroll = (event) => {
-    const offset = event.nativeEvent.contentOffset.y;
-    Animated.timing(leafRotation, {
-      toValue: offset / 100,
-      duration: 0,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  // Render swipeable right actions
-  const renderRightActions = (item) => {
-    return (
-      <TouchableOpacity
-        style={styles.deleteAction}
-        onPress={() => handleRemoveItem(item)}
-        activeOpacity={0.8}
-      >
-        <LinearGradient
-          colors={[natureColors.danger, "#C62828"]}
-          style={styles.deleteGradient}
-        >
-          <Ionicons name="trash-outline" size={24} color="#fff" />
-          <Text style={styles.deleteActionText}>Remove</Text>
-        </LinearGradient>
-      </TouchableOpacity>
-    );
-  };
-
-  // Render cart item
-  const renderCartItem = ({ item, index }) => {
-    const { product, quantity, colorIndex, colorName, price, availableStock, lineKey } = item;
-    const unitPrice = price ?? product.price;
-    const totalPrice = unitPrice * quantity;
-    const isSelected = selectedForBulk.includes(lineKey);
-    const maxStock = availableStock ?? product.colors?.[colorIndex]?.stock;
-
-    return (
-      <AnimatedComponent.View
-        entering={FadeInUp.delay(index * 80).duration(400)}
-        layout={Layout.springify()}
-        style={styles.itemWrapper}
-      >
-        <Swipeable
-          renderRightActions={() => renderRightActions(item)}
-          overshootRight={false}
-        >
-          <View style={[styles.item, isSelected && styles.itemSelected]}>
-            <TouchableOpacity
-              style={styles.checkboxContainer}
-              onPress={() => toggleBulkSelection(lineKey)}
-              activeOpacity={0.7}
-            >
-              <View
-                style={[styles.checkbox, isSelected && styles.checkboxActive]}
-              >
-                {isSelected && (
-                  <Ionicons name="checkmark" size={12} color="#FFFFFF" />
-                )}
-              </View>
-            </TouchableOpacity>
-
-            {/* Product Image */}
-            <Image
-              source={{
-                uri:
-                  resolveImageUrl(item.image) ||
-                  resolveImageUrl(product.image) ||
-                  PLACEHOLDER_IMAGE,
-              }}
-              style={styles.itemImage}
-              contentFit="cover"
-              transition={200}
-            />
-
-            {/* Product Info */}
-            <View style={styles.itemInfo}>
-              <View style={styles.itemHeader}>
-                <Text style={styles.itemName} numberOfLines={2}>
-                  {product.name}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => handleRemoveItem(item)}
-                  style={styles.itemDeleteBtn}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons
-                    name="close-outline"
-                    size={18}
-                    color={natureColors.textMuted}
-                  />
-                </TouchableOpacity>
-              </View>
-
-              {/* Eco Badge */}
-              {colorName ? (
-                <Text style={styles.ecoBadgeSmallText}>Color: {colorName}</Text>
-              ) : null}
-
-              <View style={styles.itemMeta}>
-                <View style={styles.itemPriceContainer}>
-                  <Text style={styles.itemPrice}>
-                    {formatPrice(unitPrice)}
-                  </Text>
-                  {product.originalPrice && (
-                    <Text style={styles.itemOriginalPrice}>
-                      {formatPrice(product.originalPrice)}
-                    </Text>
-                  )}
-                </View>
-                <Text style={styles.itemTotalPrice}>
-                  {formatPrice(totalPrice)}
-                </Text>
-              </View>
-
-              {/* Quantity Controls */}
-              <View style={styles.qtyRow}>
-                <TouchableOpacity
-                  style={[
-                    styles.qtyBtn,
-                    quantity <= 1 && styles.qtyBtnDisabled,
-                  ]}
-                  onPress={() => handleQuantityUpdate(item, quantity - 1)}
-                  disabled={quantity <= 1}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons
-                    name="remove"
-                    size={16}
-                    color={
-                      quantity <= 1 ? natureColors.textMuted : natureColors.text
-                    }
-                  />
-                </TouchableOpacity>
-                <Text style={styles.qtyText}>{quantity}</Text>
-                <TouchableOpacity
-                  style={styles.qtyBtn}
-                  onPress={() => handleQuantityUpdate(item, quantity + 1)}
-                  disabled={maxStock > 0 && quantity >= maxStock}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="add" size={16} color={natureColors.text} />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Swipeable>
-      </AnimatedComponent.View>
-    );
-  };
-
-  // Render recommended products
-  const renderRecommended = () => (
-    <View style={styles.recommendedSection}>
-      <View style={styles.recommendedHeader}>
-        <View style={styles.recommendedHeaderLeft}>
-          <LinearGradient
-            colors={[natureColors.primaryLight, "#C8E6C9"]}
-            style={styles.recommendedIcon}
-          >
-            <Ionicons name="leaf-outline" size={16} color="#2E7D32" />
-          </LinearGradient>
-          <Text style={styles.recommendedTitle}>🌿 You Might Also Like</Text>
-        </View>
-        <TouchableOpacity
-          onPress={() => navigation.navigate("Tabs", { screen: "Shop" })}
-        >
-          <Text style={styles.recommendedSeeAll}>See All</Text>
-        </TouchableOpacity>
-      </View>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.recommendedScroll}
-        contentContainerStyle={styles.recommendedScrollContent}
-      >
-        {recommendedProducts.map((item, index) => (
-          <AnimatedComponent.View
-            key={item.id}
-            entering={FadeInDown.delay(index * 100 + 500).duration(400)}
-            style={styles.recommendedCard}
-          >
-            <Image
-              source={{ uri: item.image }}
-              style={styles.recommendedImage}
-              contentFit="cover"
-              transition={200}
-            />
-            <View style={styles.recommendedEcoBadge}>
-              <LinearGradient
-                colors={["#E8F5E9", "#C8E6C9"]}
-                style={styles.recommendedEcoGradient}
-              >
-                <Ionicons name="leaf-outline" size={10} color="#2E7D32" />
-                <Text style={styles.recommendedEcoText}>{item.ecoScore}%</Text>
-              </LinearGradient>
-            </View>
-            <View style={styles.recommendedInfo}>
-              <Text style={styles.recommendedName} numberOfLines={1}>
-                {item.name}
-              </Text>
-              <Text style={styles.recommendedPrice}>
-                {formatPrice(item.price)}
-              </Text>
-              <TouchableOpacity
-                style={styles.recommendedAddBtn}
-                onPress={() => {
-                  Alert.alert("🌿 Added", `${item.name} added to cart!`);
-                }}
-                activeOpacity={0.7}
-              >
-                <LinearGradient
-                  colors={[natureColors.primary, natureColors.primaryDark]}
-                  style={styles.recommendedAddGradient}
-                >
-                  <Ionicons name="add" size={16} color="#fff" />
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
-          </AnimatedComponent.View>
-        ))}
-      </ScrollView>
-    </View>
-  );
 
   // If cart is empty
   if (enrichedItems.length === 0) {
     return (
       <ScreenContainer
-        onMenuPress={() => navigation.goBack()}
-        headerTitle="Cart"
+        onMenuPress={() =>
+          navigation.canGoBack()
+            ? navigation.goBack()
+            : navigation.dispatch(DrawerActions.openDrawer())
+        }
+        headerTitle="Shopping Bag"
       >
         <EmptyState
           icon="cart-outline"
-          title="Your cart is empty 🌱"
-          message="Discover our sustainable products and start shopping eco-friendly."
-          actionLabel="Start Shopping"
+          title="Your shopping bag is empty 🌱"
+          message="Explore our handcrafted planters, plant sets, and eco-friendly home collections."
+          actionLabel="Explore Catalog"
           onAction={() =>
             navigation.navigate("Main", {
               screen: "Tabs",
-              params: {
-                screen: "Shop",
-              },
+              params: { screen: "Shop" },
             })
           }
         />
@@ -496,863 +318,833 @@ export function CartScreen({ navigation }) {
 
   return (
     <ScreenContainer
-      onMenuPress={() => navigation.openDrawer()}
-      headerTitle="My Cart"
+      onMenuPress={() =>
+        navigation.canGoBack()
+          ? navigation.goBack()
+          : navigation.dispatch(DrawerActions.openDrawer())
+      }
+      headerTitle="Shopping Bag"
       scroll={false}
       headerRight={
-        <View style={styles.headerRight}>
-          {selectedForBulk.length > 0 && (
-            <TouchableOpacity
-              onPress={handleBulkRemove}
-              style={styles.headerIconBtn}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name="trash-outline"
-                size={20}
-                color={natureColors.danger}
-              />
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity
-            onPress={() =>
-              Alert.alert("Cart", `${itemCount} items in your cart`)
-            }
-            style={styles.headerIconBtn}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name="information-circle-outline"
-              size={22}
-              color={natureColors.text}
-            />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          onPress={handleClearCart}
+          style={styles.clearHeaderBtn}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.clearHeaderBtnText}>Clear</Text>
+        </TouchableOpacity>
       }
     >
-      <Animated.ScrollView
+      <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContainer}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
+        style={styles.scrollView}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* Cart Items */}
-        <View style={styles.listContainer}>
-          {/* Cart Header with count */}
-          <View style={styles.cartHeader}>
-            <View style={styles.cartHeaderLeft}>
-              <LinearGradient
-                colors={[natureColors.primaryLight, "#C8E6C9"]}
-                style={styles.cartHeaderIcon}
-              >
-                <Ionicons name="leaf-outline" size={16} color="#2E7D32" />
-              </LinearGradient>
-              <Text style={styles.cartHeaderTitle}>
-                {itemCount} {itemCount === 1 ? "Item" : "Items"}
-              </Text>
-            </View>
-            <View style={styles.cartHeaderRight}>
-              {selectedForBulk.length > 0 && (
-                <Text style={styles.selectedCount}>
-                  {selectedForBulk.length} selected
-                </Text>
-              )}
-              <TouchableOpacity
-                onPress={() => {
-                  Alert.alert(
-                    "🌿 Clear Cart",
-                    "Are you sure you want to remove all items?",
-                    [
-                      { text: "Cancel", style: "cancel" },
-                      {
-                        text: "Clear All",
-                        style: "destructive",
-                        onPress: () => {
-                          if (isAuthenticated) {
-                            dispatch(clearServerCart());
-                          } else {
-                            enrichedItems.forEach((entry) => handleRemoveItem(entry));
-                          }
-                          setSelectedForBulk([]);
-                        },
-                      },
-                    ],
-                  );
-                }}
-              >
-                <Text style={styles.clearAllText}>Clear All</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {enrichedItems.map((item, index) => (
-            <View key={item.lineKey}>
-              {renderCartItem({ item, index })}
-            </View>
-          ))}
-        </View>
-
-        {/* Recommended Products */}
-        {renderRecommended()}
-
-        {/* Free Shipping Progress */}
-        {subtotal < FREE_SHIPPING_THRESHOLD && (
-          <AnimatedComponent.View
-            entering={FadeInDown.delay(300).duration(400)}
-            style={styles.shippingProgressWrapper}
-          >
-            <LinearGradient
-              colors={[natureColors.primaryLight, "#C8E6C9"]}
-              style={styles.shippingProgressContainer}
-            >
-              <View style={styles.shippingProgressHeader}>
-                <View style={styles.shippingIconContainer}>
-                  <Ionicons
-                    name="leaf-outline"
-                    size={18}
-                    color={natureColors.primary}
-                  />
-                </View>
-                <Text style={styles.shippingProgressText}>
-                  Add {formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)} more for
-                  free shipping 🌿
-                </Text>
-              </View>
-              <View style={styles.shippingProgressBar}>
-                <LinearGradient
-                  colors={[natureColors.primary, natureColors.leafGreen]}
-                  style={[
-                    styles.shippingProgressFill,
-                    { width: `${freeShippingProgress}%` },
-                  ]}
+        {/* ===== TOP STATUS / FREE SHIPPING PROGRESS BAR ===== */}
+        <View style={styles.topProgressWrapper}>
+          <View style={styles.topProgressCard}>
+            <View style={styles.topProgressHeader}>
+              <View style={styles.truckIconCircle}>
+                <Ionicons
+                  name={subtotal >= FREE_SHIPPING_THRESHOLD ? "checkmark-circle" : "car-outline"}
+                  size={16}
+                  color="#FFFFFF"
                 />
               </View>
-              <Text style={styles.shippingProgressLabel}>
-                {Math.round(freeShippingProgress)}% towards free shipping
-              </Text>
-            </LinearGradient>
-          </AnimatedComponent.View>
-        )}
-
-        {/* Sustainability Impact */}
-        <AnimatedComponent.View
-          entering={FadeInDown.delay(200).duration(400)}
-          style={styles.sustainabilityCard}
-        >
-          <LinearGradient
-            colors={["#E8F5E9", "#C8E6C9"]}
-            style={styles.sustainabilityGradient}
-          >
-            <View style={styles.sustainabilityContent}>
-              <View style={styles.sustainabilityIcon}>
-                <Ionicons name="leaf-outline" size={24} color="#2E7D32" />
-              </View>
-              <View style={styles.sustainabilityText}>
-                <Text style={styles.sustainabilityTitle}>
-                  🌍 Your Carbon Savings
-                </Text>
-                <Text style={styles.sustainabilitySubtitle}>
-                  This order saves approximately {Math.round(itemCount * 0.5)}kg
-                  of CO₂ emissions
-                </Text>
-              </View>
-            </View>
-          </LinearGradient>
-        </AnimatedComponent.View>
-
-        <View style={styles.bottomSpacer} />
-      </Animated.ScrollView>
-
-      {/* ===== SUMMARY BOTTOM SHEET ===== */}
-      <AnimatedComponent.View
-        entering={FadeInUp.duration(500)}
-        style={styles.summaryContainer}
-      >
-        <LinearGradient
-          colors={["rgba(255,255,255,0.98)", "#FFFFFF"]}
-          style={styles.summaryGradient}
-        >
-          <View style={styles.summary}>
-            {/* Coupon Code Section */}
-            <TouchableOpacity
-              style={styles.couponSection}
-              onPress={() =>
-                Alert.alert("🌿 Coupon Code", "Enter your coupon code")
-              }
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name="gift-outline"
-                size={20}
-                color={natureColors.primary}
-              />
-              <Text style={styles.couponText}>Apply Coupon Code</Text>
-              <Ionicons
-                name="chevron-forward"
-                size={16}
-                color={natureColors.textMuted}
-              />
-            </TouchableOpacity>
-
-            <View style={styles.summaryDivider} />
-
-            {/* Price Breakdown */}
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Subtotal</Text>
-              <Text style={styles.summaryValue}>{formatPrice(subtotal)}</Text>
-            </View>
-
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Shipping</Text>
-              <Text
-                style={[
-                  styles.summaryValue,
-                  shipping === 0 && styles.freeShippingText,
-                ]}
-              >
-                {shipping === 0 ? "FREE 🌿" : formatPrice(shipping)}
+              <Text style={styles.topProgressText}>
+                {subtotal >= FREE_SHIPPING_THRESHOLD
+                  ? "Congratulations! You've unlocked FREE Express Delivery 🎉"
+                  : `Add ${formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)} more for FREE Delivery`}
               </Text>
             </View>
-
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Tax</Text>
-              <Text style={styles.summaryValue}>Included</Text>
-            </View>
-
-            <View style={[styles.summaryRow, styles.totalRow]}>
-              <View>
-                <Text style={styles.totalLabel}>Total</Text>
-                <Text style={styles.totalSubLabel}>Including all taxes</Text>
-              </View>
-              <Text style={styles.totalValue}>{formatPrice(total)}</Text>
-            </View>
-
-            {/* Checkout Button */}
-            <TouchableOpacity
-              style={styles.checkoutBtn}
-              onPress={handleCheckout}
-              activeOpacity={0.8}
-              disabled={isProcessing}
-            >
+            <View style={styles.progressBarTrack}>
               <LinearGradient
-                colors={[natureColors.primary, natureColors.primaryDark]}
-                style={styles.checkoutGradient}
-              >
-                <Ionicons name="leaf-outline" size={20} color="#FFFFFF" />
-                <Text style={styles.checkoutBtnText}>
-                  {isProcessing ? "Processing..." : "Proceed to Checkout"}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-
-            {/* Eco-friendly note */}
-            <View style={styles.checkoutNote}>
-              <Ionicons name="leaf-outline" size={14} color="#2E7D32" />
-              <Text style={styles.checkoutNoteText}>
-                Eco-friendly delivery available
-              </Text>
+                colors={["#2E7D32", "#43A047"]}
+                style={[styles.progressBarFill, { width: `${freeShippingProgress}%` }]}
+              />
             </View>
           </View>
-        </LinearGradient>
-      </AnimatedComponent.View>
-
-      {/* ===== CHECKOUT MODAL ===== */}
-      <Modal
-        visible={showCheckoutModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowCheckoutModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <LinearGradient
-            colors={["rgba(0,0,0,0.6)", "rgba(0,0,0,0.3)"]}
-            style={styles.modalOverlayGradient}
-          >
-            <View style={styles.modalContent}>
-              {isProcessing ? (
-                <AnimatedComponent.View
-                  entering={FadeInUp.duration(400)}
-                  style={styles.modalLoaderContent}
-                >
-                  <View style={styles.modalIconContainer}>
-                    <LinearGradient
-                      colors={[natureColors.primaryLight, "#C8E6C9"]}
-                      style={styles.modalIconGradient}
-                    >
-                      <Ionicons
-                        name="leaf-outline"
-                        size={48}
-                        color={natureColors.primary}
-                      />
-                    </LinearGradient>
-                  </View>
-                  <Text style={styles.modalLoaderText}>
-                    🌿 Processing your order...
-                  </Text>
-                  <View style={styles.modalLoaderBar}>
-                    <Animated.View style={styles.modalLoaderFill} />
-                  </View>
-                </AnimatedComponent.View>
-              ) : null}
-            </View>
-          </LinearGradient>
         </View>
-      </Modal>
+
+        {/* ===== BAG ITEMS LIST ===== */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>
+            Cart Items <Text style={styles.itemCountBadge}>({itemCount})</Text>
+          </Text>
+        </View>
+
+        <View style={styles.itemsList}>
+          {enrichedItems.map((item, index) => {
+            const { product, quantity, colorIndex, colorName, price, availableStock } = item;
+            const unitPrice = price ?? product.price ?? 0;
+            const itemTotal = unitPrice * quantity;
+            const maxStock = availableStock ?? product.colors?.[colorIndex]?.stock;
+
+            return (
+              <Animated.View
+                key={item.lineKey}
+                entering={FadeInDown.delay(index * 60).duration(350)}
+                layout={Layout.springify()}
+                style={styles.itemCard}
+              >
+                {/* Product Image */}
+                <Image
+                  source={{ uri: item.image }}
+                  style={styles.itemImage}
+                  contentFit="cover"
+                  transition={200}
+                />
+
+                {/* Product Details */}
+                <View style={styles.itemDetails}>
+                  <View style={styles.itemTitleRow}>
+                    <Text style={styles.itemTitle} numberOfLines={2}>
+                      {product.name || "Green Fibre Item"}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => handleRemoveItem(item)}
+                      style={styles.removeIconBtn}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Ionicons name="trash-outline" size={18} color={brandColors.danger} />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Variant & Stock Info */}
+                  <View style={styles.itemMetaRow}>
+                    {colorName ? (
+                      <View style={styles.colorPill}>
+                        <Text style={styles.colorPillText}>Color: {colorName}</Text>
+                      </View>
+                    ) : null}
+                    <Text style={styles.unitPriceText}>{formatPrice(unitPrice)} each</Text>
+                  </View>
+
+                  {/* Price & Quantity Stepper */}
+                  <View style={styles.itemBottomRow}>
+                    <Text style={styles.itemTotalPrice}>{formatPrice(itemTotal)}</Text>
+
+                    {/* Stepper */}
+                    <View style={styles.stepperContainer}>
+                      <TouchableOpacity
+                        style={[styles.stepperBtn, quantity <= 1 && styles.stepperBtnDanger]}
+                        onPress={() => handleQuantityUpdate(item, quantity - 1)}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons
+                          name={quantity <= 1 ? "trash-outline" : "remove"}
+                          size={14}
+                          color={quantity <= 1 ? brandColors.danger : brandColors.primary}
+                        />
+                      </TouchableOpacity>
+
+                      <Text style={styles.stepperValue}>{quantity}</Text>
+
+                      <TouchableOpacity
+                        style={[
+                          styles.stepperBtn,
+                          maxStock > 0 && quantity >= maxStock && styles.stepperBtnDisabled,
+                        ]}
+                        onPress={() => handleQuantityUpdate(item, quantity + 1)}
+                        disabled={maxStock > 0 && quantity >= maxStock}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="add" size={15} color={brandColors.primary} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              </Animated.View>
+            );
+          })}
+        </View>
+
+        {/* ===== COUPON & OFFERS SECTION ===== */}
+        <View style={styles.couponCard}>
+          <View style={styles.couponCardHeader}>
+            <View style={styles.couponCardHeaderLeft}>
+              <Ionicons name="pricetag" size={18} color={brandColors.primary} />
+              <Text style={styles.couponCardTitle}>Coupons & Offers</Text>
+            </View>
+            {appliedCoupon && (
+              <TouchableOpacity onPress={handleRemoveCoupon} activeOpacity={0.7}>
+                <Text style={styles.removeCouponBtnText}>Remove</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Applied Coupon Banner */}
+          {appliedCoupon ? (
+            <Animated.View entering={FadeInDown.duration(300)} style={styles.appliedBanner}>
+              <View style={styles.appliedBannerLeft}>
+                <View style={styles.appliedCheckCircle}>
+                  <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                </View>
+                <View>
+                  <Text style={styles.appliedCodeText}>{appliedCoupon.code}</Text>
+                  <Text style={styles.appliedSavingsText}>
+                    {appliedCoupon.message || `You saved ${formatPrice(discountAmount)}!`}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={handleRemoveCoupon}
+                style={styles.appliedRemoveCross}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="close-circle" size={20} color={brandColors.textMuted} />
+              </TouchableOpacity>
+            </Animated.View>
+          ) : (
+            <>
+              {/* Interactive Input */}
+              <View style={styles.couponInputWrapper}>
+                <TextInput
+                  style={styles.couponTextInput}
+                  value={couponInput}
+                  onChangeText={(val) => {
+                    setCouponInput(val.toUpperCase());
+                    setCouponError("");
+                  }}
+                  placeholder="Enter Promo Code (e.g. GREEN10)"
+                  placeholderTextColor={brandColors.textMuted}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                />
+                <TouchableOpacity
+                  style={[
+                    styles.couponApplyBtn,
+                    !couponInput.trim() && styles.couponApplyBtnDisabled,
+                  ]}
+                  onPress={() => handleApplyCoupon(couponInput)}
+                  disabled={!couponInput.trim() || couponApplying}
+                  activeOpacity={0.8}
+                >
+                  {couponApplying ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.couponApplyBtnText}>Apply</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+
+              {/* Error Message */}
+              {couponError ? (
+                <Text style={styles.couponErrorText}>{couponError}</Text>
+              ) : null}
+
+              {/* Quick Selectable Coupon Chips */}
+              <View style={styles.couponChipsRow}>
+                {AVAILABLE_COUPONS.map((cp) => (
+                  <TouchableOpacity
+                    key={cp.code}
+                    style={styles.couponChip}
+                    onPress={() => handleApplyCoupon(cp.code)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.chipDashedBorder}>
+                      <Text style={styles.chipCodeText}>{cp.code}</Text>
+                      <Text style={styles.chipLabelText}>{cp.label}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
+        </View>
+
+        {/* ===== ORDER PRICE BREAKDOWN ===== */}
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryCardTitle}>Price Details ({itemCount} Items)</Text>
+
+          <View style={styles.summaryLine}>
+            <Text style={styles.summaryLineLabel}>Bag Total</Text>
+            <Text style={styles.summaryLineValue}>{formatPrice(subtotal)}</Text>
+          </View>
+
+          {discountAmount > 0 && (
+            <View style={styles.summaryLine}>
+              <Text style={styles.summaryLineLabelGreen}>
+                Coupon Discount ({appliedCoupon?.code})
+              </Text>
+              <Text style={styles.summaryLineValueGreen}>- {formatPrice(discountAmount)}</Text>
+            </View>
+          )}
+
+          <View style={styles.summaryLine}>
+            <Text style={styles.summaryLineLabel}>Estimated Delivery</Text>
+            <Text
+              style={[
+                styles.summaryLineValue,
+                shipping === 0 && styles.summaryLineValueGreen,
+              ]}
+            >
+              {shipping === 0 ? "FREE" : formatPrice(shipping)}
+            </Text>
+          </View>
+
+          <View style={styles.summaryLine}>
+            <Text style={styles.summaryLineLabel}>Eco-Friendly Packing</Text>
+            <Text style={styles.summaryLineValueGreen}>FREE</Text>
+          </View>
+
+          <View style={styles.summaryDivider} />
+
+          <View style={styles.summaryTotalRow}>
+            <View>
+              <Text style={styles.summaryTotalLabel}>Total Amount</Text>
+              <Text style={styles.summaryTotalSub}>Inclusive of all taxes</Text>
+            </View>
+            <Text style={styles.summaryTotalValue}>{formatPrice(payableTotal)}</Text>
+          </View>
+        </View>
+
+        {/* ===== TRUST ASSURANCES ===== */}
+        <View style={styles.trustGrid}>
+          <View style={styles.trustItem}>
+            <Ionicons name="shield-checkmark-outline" size={20} color={brandColors.primary} />
+            <Text style={styles.trustText}>100% Genuine Plant Quality</Text>
+          </View>
+          <View style={styles.trustItem}>
+            <Ionicons name="refresh-circle-outline" size={20} color={brandColors.primary} />
+            <Text style={styles.trustText}>Safe Transit Replacement</Text>
+          </View>
+          <View style={styles.trustItem}>
+            <MaterialCommunityIcons name="leaf" size={20} color={brandColors.primary} />
+            <Text style={styles.trustText}>Eco Biodegradable Packing</Text>
+          </View>
+        </View>
+
+        {/* Spacer for bottom bar */}
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+
+      {/* ===== SLEEK STICKY BOTTOM CHECKOUT BAR ===== */}
+      <View style={styles.stickyFooter}>
+        <View style={styles.footerContent}>
+          {/* Price side */}
+          <View style={styles.footerPriceColumn}>
+            <Text style={styles.footerTotalLabel}>Payable Amount</Text>
+            <Text style={styles.footerTotalValue}>{formatPrice(payableTotal)}</Text>
+            {discountAmount > 0 && (
+              <Text style={styles.footerSavingsTag}>Saved {formatPrice(discountAmount)}</Text>
+            )}
+          </View>
+
+          {/* Checkout CTA */}
+          <TouchableOpacity
+            style={styles.checkoutBtn}
+            onPress={handleProceedToCheckout}
+            activeOpacity={0.88}
+          >
+            <LinearGradient
+              colors={["#1C4A2A", "#2E7D32"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.checkoutBtnGradient}
+            >
+              <Text style={styles.checkoutBtnText}>Proceed to Checkout</Text>
+              <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+    backgroundColor: brandColors.cream,
+  },
   scrollContainer: {
-    paddingBottom: 280,
+    paddingBottom: 110,
   },
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+  clearHeaderBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    ...shadows.soft,
   },
-  headerIconBtn: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: "#F5F5F5",
+  clearHeaderBtnText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: brandColors.danger,
   },
 
-  // ===== CART HEADER =====
-  cartHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  // ===== PROGRESS =====
+  topProgressWrapper: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 12,
+    paddingBottom: 6,
   },
-  cartHeaderLeft: {
+  topProgressCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "rgba(28, 74, 42, 0.08)",
+    ...shadows.soft,
+  },
+  topProgressHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    marginBottom: 8,
   },
-  cartHeaderIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+  truckIconCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: brandColors.primary,
     alignItems: "center",
     justifyContent: "center",
   },
-  cartHeaderTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: natureColors.text,
-  },
-  cartHeaderRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  selectedCount: {
-    fontSize: 12,
-    color: natureColors.primary,
+  topProgressText: {
+    fontSize: 11,
     fontWeight: "600",
+    color: brandColors.text,
+    flex: 1,
   },
-  clearAllText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: natureColors.danger,
+  progressBarTrack: {
+    height: 5,
+    backgroundColor: "#EEEEEE",
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  progressBarFill: {
+    height: "100%",
+    borderRadius: 3,
   },
 
-  // ===== CART ITEMS =====
-  listContainer: {
-    paddingHorizontal: 16,
-  },
-  itemWrapper: {
-    marginBottom: 12,
-  },
-  item: {
+  // ===== SECTION HEADER =====
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: natureColors.white,
+    justifyContent: "space-between",
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    paddingBottom: 6,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: brandColors.text,
+  },
+  itemCountBadge: {
+    color: brandColors.primary,
+    fontWeight: "600",
+  },
+
+  // ===== ITEMS LIST =====
+  itemsList: {
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  itemCard: {
+    flexDirection: "row",
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
     borderWidth: 1,
-    borderColor: natureColors.borderLight,
-  },
-  itemSelected: {
-    borderColor: natureColors.primary,
-    backgroundColor: natureColors.primaryLight,
-  },
-  checkboxContainer: {
-    marginRight: 8,
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: natureColors.borderLight,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  checkboxActive: {
-    backgroundColor: natureColors.primary,
-    borderColor: natureColors.primary,
+    borderColor: "rgba(0, 0, 0, 0.05)",
+    ...shadows.soft,
   },
   itemImage: {
-    width: 70,
-    height: 70,
+    width: 80,
+    height: 80,
     borderRadius: 12,
     backgroundColor: "#F5F5F5",
   },
-  itemInfo: {
+  itemDetails: {
     flex: 1,
     marginLeft: 12,
+    justifyContent: "space-between",
   },
-  itemHeader: {
+  itemTitleRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
   },
-  itemName: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: natureColors.text,
+  itemTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: brandColors.text,
     flex: 1,
-    marginRight: 8,
+    marginRight: 6,
+    lineHeight: 18,
   },
-  itemDeleteBtn: {
-    padding: 4,
+  removeIconBtn: {
+    padding: 2,
   },
-  ecoBadgeSmall: {
+  itemMetaRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    marginTop: 2,
+    gap: 8,
+    marginVertical: 3,
   },
-  ecoBadgeSmallText: {
-    fontSize: 9,
-    color: "#2E7D32",
+  colorPill: {
+    backgroundColor: brandColors.primaryLight,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  colorPillText: {
+    fontSize: 10,
     fontWeight: "600",
+    color: brandColors.primary,
   },
-  itemMeta: {
+  unitPriceText: {
+    fontSize: 11,
+    color: brandColors.textMuted,
+  },
+  itemBottomRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginTop: 4,
-  },
-  itemPriceContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  itemPrice: {
-    fontSize: 14,
-    color: natureColors.primary,
-    fontWeight: "600",
-  },
-  itemOriginalPrice: {
-    fontSize: 11,
-    color: natureColors.textMuted,
-    textDecorationLine: "line-through",
   },
   itemTotalPrice: {
-    fontSize: 14,
-    color: natureColors.text,
-    fontWeight: "700",
-  },
-  qtyRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 6,
-  },
-  qtyBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: natureColors.primaryLight,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  qtyBtnDisabled: {
-    backgroundColor: "#F5F5F5",
-  },
-  qtyText: {
-    fontSize: 14,
-    fontWeight: "600",
-    minWidth: 20,
-    textAlign: "center",
-  },
-  deleteAction: {
-    height: "100%",
-    borderTopRightRadius: 12,
-    borderBottomRightRadius: 12,
-    overflow: "hidden",
-  },
-  deleteGradient: {
-    justifyContent: "center",
-    alignItems: "center",
-    width: 80,
-    height: "100%",
-  },
-  deleteActionText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600",
-    marginTop: 4,
+    fontSize: 15,
+    fontWeight: "800",
+    color: brandColors.primary,
   },
 
-  // ===== RECOMMENDED =====
-  recommendedSection: {
-    marginTop: 20,
-    paddingHorizontal: 16,
+  // ===== STEPPER =====
+  stepperContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F5F5F5",
+    borderRadius: 20,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: "#E5E5E5",
   },
-  recommendedHeader: {
+  stepperBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadows.soft,
+  },
+  stepperBtnDanger: {
+    backgroundColor: "#FFEBEE",
+  },
+  stepperBtnDisabled: {
+    opacity: 0.5,
+  },
+  stepperValue: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: brandColors.text,
+    minWidth: 24,
+    textAlign: "center",
+  },
+
+  // ===== COUPONS & OFFERS CARD =====
+  couponCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    marginHorizontal: 16,
+    marginTop: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.05)",
+    ...shadows.soft,
+  },
+  couponCardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 10,
   },
-  recommendedHeaderLeft: {
+  couponCardHeaderLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
-  recommendedIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  recommendedTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: natureColors.text,
-  },
-  recommendedSeeAll: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: natureColors.primary,
-  },
-  recommendedScroll: {
-    flexDirection: "row",
-  },
-  recommendedScrollContent: {
-    paddingRight: 16,
-  },
-  recommendedCard: {
-    width: 140,
-    backgroundColor: natureColors.white,
-    borderRadius: 16,
-    marginRight: 12,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: natureColors.borderLight,
-  },
-  recommendedImage: {
-    width: "100%",
-    height: 100,
-    backgroundColor: "#F5F5F5",
-  },
-  recommendedEcoBadge: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-  },
-  recommendedEcoGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  recommendedEcoText: {
-    fontSize: 8,
-    fontWeight: "700",
-    color: "#2E7D32",
-  },
-  recommendedInfo: {
-    padding: 10,
-  },
-  recommendedName: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: natureColors.text,
-    marginBottom: 4,
-  },
-  recommendedPrice: {
+  couponCardTitle: {
     fontSize: 14,
     fontWeight: "700",
-    color: natureColors.primary,
-    marginBottom: 8,
+    color: brandColors.text,
   },
-  recommendedAddBtn: {
-    alignSelf: "flex-end",
-    borderRadius: 14,
-    overflow: "hidden",
+  removeCouponBtnText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: brandColors.danger,
   },
-  recommendedAddGradient: {
-    width: 28,
-    height: 28,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  // ===== SHIPPING PROGRESS =====
-  shippingProgressWrapper: {
-    paddingHorizontal: 16,
-    marginTop: 20,
-  },
-  shippingProgressContainer: {
-    borderRadius: 16,
-    padding: 16,
-  },
-  shippingProgressHeader: {
+  couponInputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 8,
-  },
-  shippingIconContainer: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: natureColors.white,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  shippingProgressText: {
-    fontSize: 12,
-    color: natureColors.primaryDark,
-    fontWeight: "600",
-    flex: 1,
-  },
-  shippingProgressBar: {
-    height: 4,
-    backgroundColor: natureColors.white,
-    borderRadius: 2,
+    borderWidth: 1.2,
+    borderColor: brandColors.borderMedium,
+    borderRadius: 12,
+    backgroundColor: "#FCFCFC",
+    paddingLeft: 12,
+    height: 44,
     overflow: "hidden",
   },
-  shippingProgressFill: {
+  couponTextInput: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "600",
+    color: brandColors.text,
     height: "100%",
-    borderRadius: 2,
   },
-  shippingProgressLabel: {
+  couponApplyBtn: {
+    backgroundColor: brandColors.primary,
+    height: "100%",
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  couponApplyBtnDisabled: {
+    backgroundColor: "#AAAAAA",
+  },
+  couponApplyBtnText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+  },
+  couponErrorText: {
     fontSize: 11,
-    color: natureColors.primaryDark,
-    marginTop: 4,
+    color: brandColors.danger,
+    marginTop: 5,
+    marginLeft: 2,
     fontWeight: "500",
   },
 
-  // ===== SUSTAINABILITY =====
-  sustainabilityCard: {
-    paddingHorizontal: 16,
-    marginTop: 16,
+  // Applied banner
+  appliedBanner: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#F0F9F1",
+    borderWidth: 1,
+    borderColor: "#C8E6C9",
+    borderRadius: 12,
+    padding: 10,
   },
-  sustainabilityGradient: {
-    borderRadius: 16,
-    padding: 16,
-  },
-  sustainabilityContent: {
+  appliedBannerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
   },
-  sustainabilityIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: natureColors.white,
+  appliedCheckCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#2E7D32",
     alignItems: "center",
     justifyContent: "center",
   },
-  sustainabilityText: {
-    flex: 1,
-  },
-  sustainabilityTitle: {
-    fontSize: 14,
-    fontWeight: "700",
+  appliedCodeText: {
+    fontSize: 13,
+    fontWeight: "800",
     color: "#1B5E20",
   },
-  sustainabilitySubtitle: {
-    fontSize: 12,
+  appliedSavingsText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#2E7D32",
+  },
+  appliedRemoveCross: {
+    padding: 2,
+  },
+
+  // Chips
+  couponChipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 10,
+  },
+  couponChip: {
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  chipDashedBorder: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: brandColors.primary,
+    backgroundColor: brandColors.primaryLight,
+  },
+  chipCodeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: brandColors.primary,
+  },
+  chipLabelText: {
+    fontSize: 10,
+    fontWeight: "600",
     color: "#2E7D32",
   },
 
-  // ===== SUMMARY =====
-  summaryContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
+  // ===== PRICE DETAILS CARD =====
+  summaryCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    marginHorizontal: 16,
+    marginTop: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.05)",
+    ...shadows.soft,
   },
-  summaryGradient: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 10,
-  },
-  summary: {
-    padding: 16,
-    paddingBottom: Platform.OS === "ios" ? 34 : 16,
-  },
-  couponSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    backgroundColor: natureColors.primaryLight,
-    borderRadius: 12,
-  },
-  couponText: {
+  summaryCardTitle: {
     fontSize: 14,
-    color: natureColors.primary,
+    fontWeight: "700",
+    color: brandColors.text,
+    marginBottom: 10,
+  },
+  summaryLine: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 4,
+  },
+  summaryLineLabel: {
+    fontSize: 13,
+    color: brandColors.textSecondary,
+  },
+  summaryLineValue: {
+    fontSize: 13,
     fontWeight: "600",
-    flex: 1,
+    color: brandColors.text,
+  },
+  summaryLineLabelGreen: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#2E7D32",
+  },
+  summaryLineValueGreen: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#2E7D32",
   },
   summaryDivider: {
     height: 1,
-    backgroundColor: natureColors.borderLight,
-    marginVertical: 12,
+    backgroundColor: "#F0F0F0",
+    marginVertical: 8,
   },
-  summaryRow: {
+  summaryTotalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 8,
+    alignItems: "center",
+    paddingTop: 4,
   },
-  summaryLabel: {
-    fontSize: 14,
-    color: natureColors.textMuted,
-  },
-  summaryValue: {
-    fontSize: 14,
-    color: natureColors.text,
-    fontWeight: "500",
-  },
-  freeShippingText: {
-    color: natureColors.success,
+  summaryTotalLabel: {
+    fontSize: 15,
     fontWeight: "700",
+    color: brandColors.text,
   },
-  totalRow: {
-    borderTopWidth: 1,
-    borderTopColor: natureColors.borderLight,
-    paddingTop: 12,
-    marginTop: 4,
-    marginBottom: 16,
+  summaryTotalSub: {
+    fontSize: 10,
+    color: brandColors.textMuted,
+    marginTop: 1,
   },
-  totalLabel: {
+  summaryTotalValue: {
     fontSize: 18,
-    fontWeight: "700",
-    color: natureColors.text,
-  },
-  totalSubLabel: {
-    fontSize: 11,
-    color: natureColors.textMuted,
-  },
-  totalValue: {
-    fontSize: 24,
-    fontWeight: "900",
-    color: natureColors.primary,
-  },
-  checkoutBtn: {
-    borderRadius: 16,
-    overflow: "hidden",
-  },
-  checkoutGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 14,
-  },
-  checkoutBtnText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  checkoutNote: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    marginTop: 8,
-  },
-  checkoutNoteText: {
-    fontSize: 11,
-    color: "#2E7D32",
-    fontWeight: "500",
+    fontWeight: "800",
+    color: brandColors.primary,
   },
 
-  // ===== MODAL =====
-  modalOverlay: {
-    flex: 1,
+  // ===== TRUST GRID =====
+  trustGrid: {
+    marginHorizontal: 16,
+    marginTop: 14,
+    gap: 8,
   },
-  modalOverlayGradient: {
-    flex: 1,
-    justifyContent: "center",
+  trustItem: {
+    flexDirection: "row",
     alignItems: "center",
+    gap: 10,
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(28, 74, 42, 0.06)",
   },
-  modalContent: {
-    backgroundColor: natureColors.white,
-    borderRadius: 24,
-    padding: 32,
-    width: width * 0.8,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  modalLoaderContent: {
-    alignItems: "center",
-  },
-  modalIconContainer: {
-    marginBottom: 16,
-  },
-  modalIconGradient: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modalLoaderText: {
-    fontSize: 16,
-    color: natureColors.text,
+  trustText: {
+    fontSize: 12,
     fontWeight: "600",
-    marginBottom: 16,
-  },
-  modalLoaderBar: {
-    width: 200,
-    height: 4,
-    backgroundColor: natureColors.borderLight,
-    borderRadius: 2,
-    overflow: "hidden",
-  },
-  modalLoaderFill: {
-    width: "100%",
-    height: "100%",
-    backgroundColor: natureColors.primary,
-    borderRadius: 2,
-    animation: "pulse 1.5s ease-in-out infinite",
+    color: brandColors.textSecondary,
   },
 
   // ===== SPACER =====
   bottomSpacer: {
-    height: 20,
+    height: 30,
+  },
+
+  // ===== SLEEK STICKY FOOTER =====
+  stickyFooter: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0, 0, 0, 0.08)",
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === "ios" ? 30 : 16,
+    ...shadows.medium,
+  },
+  footerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  footerPriceColumn: {
+    flex: 0.85,
+  },
+  footerTotalLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: brandColors.textMuted,
+  },
+  footerTotalValue: {
+    fontSize: 19,
+    fontWeight: "800",
+    color: brandColors.primary,
+    marginTop: 1,
+  },
+  footerSavingsTag: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#2E7D32",
+  },
+  checkoutBtn: {
+    flex: 1.15,
+    borderRadius: 14,
+    overflow: "hidden",
+    ...shadows.soft,
+  },
+  checkoutBtnGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 13,
+    paddingHorizontal: 16,
+  },
+  checkoutBtnText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    letterSpacing: 0.2,
   },
 });

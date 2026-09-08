@@ -22,6 +22,7 @@ import {
 import { showToast } from "../store/slices/uiSlice";
 import { greenFibreAuthService } from "../api/services/greenFibreAuthService";
 import { completeAuthentication } from "../store/thunks/authThunks";
+import { syncSessionAfterAuth } from "../store/thunks/sessionSyncThunks";
 import { hasAuthCookie } from "../api/cookieJar";
 import { brand } from "../data/content";
 
@@ -155,11 +156,9 @@ export function LoginScreen({ navigation }) {
     dispatch(loginStart());
 
     try {
-      await greenFibreAuthService.login({ email: email.trim(), password });
-      if (!hasAuthCookie()) {
-        throw new Error("Login succeeded but the session cookie was not stored.");
-      }
-      await dispatch(completeAuthentication()).unwrap();
+      const loginResult = await greenFibreAuthService.login({ email: email.trim(), password });
+      await dispatch(completeAuthentication(loginResult?.user || loginResult?.data?.user)).unwrap();
+      dispatch(syncSessionAfterAuth());
       dispatch(
         showToast({
           message: "Welcome back! Signed in successfully.",

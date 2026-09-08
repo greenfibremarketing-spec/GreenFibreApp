@@ -3,9 +3,12 @@ import { Platform } from 'react-native';
 import {
     clearCookies,
     getCookieHeader,
+    getAuthToken,
     loadCookies,
     parseSetCookieHeaders,
     saveCookies,
+    saveAuthToken,
+    TOKEN_COOKIE_NAME,
 } from './cookieJar';
 
 const DEFAULT_GREEN_FIBRE_API_URL = 'https://api.greenfibre.org/api';
@@ -57,11 +60,19 @@ authApiClient.interceptors.request.use(async (config) => {
     if (cookieHeader) {
         config.headers.Cookie = cookieHeader;
     }
+    const token = getAuthToken();
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
 });
 
 authApiClient.interceptors.response.use(async (response) => {
     await persistResponseCookies(response.headers);
+    const bodyToken = response.data?.token || response.data?.data?.token || response.data?.accessToken;
+    if (bodyToken) {
+        await saveAuthToken(bodyToken);
+    }
     return response;
 }, async (error) => {
     if (error.response?.headers) {

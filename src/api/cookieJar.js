@@ -90,6 +90,20 @@ export function getCookieHeader(cookies = memoryCookies) {
     return entries.map(([name, value]) => `${name}=${value}`).join('; ');
 }
 
+export async function saveAuthToken(token) {
+    if (!token) return;
+    await saveCookies({ [TOKEN_COOKIE_NAME]: token });
+}
+
+export function getAuthToken() {
+    return memoryCookies[TOKEN_COOKIE_NAME] || memoryCookies['jwt'] || memoryCookies['accessToken'] || null;
+}
+
 export function hasAuthCookie(cookies = memoryCookies) {
-    return Boolean(cookies[TOKEN_COOKIE_NAME]);
+    return Boolean(
+        cookies[TOKEN_COOKIE_NAME] ||
+        cookies['jwt'] ||
+        cookies['accessToken'] ||
+        cookies['token']
+    );
 }

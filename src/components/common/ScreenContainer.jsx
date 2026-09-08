@@ -33,7 +33,7 @@ export function ScreenContainer({
     <View style={[styles.content, contentStyle]}>{children}</View>
   );
   return (
-    <SafeAreaView style={[styles.container, style]} edges={["bottom"]}>
+    <View style={[styles.container, style]}>
       {showHeader && (
         <AppHeader
           showOfferBar={showOfferBar}
@@ -48,7 +48,7 @@ export function ScreenContainer({
       >
         {content}
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 const styles = StyleSheet.create({

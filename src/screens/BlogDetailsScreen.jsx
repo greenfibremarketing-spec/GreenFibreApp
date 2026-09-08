@@ -1,694 +1,365 @@
-import React, { useState, useEffect } from "react";
+// src/screens/BlogDetailsScreen.jsx
+// Green Fibre — Premium blog article reader
+// Generous margins, drop-cap first paragraph, Playfair serif headline
+// 17px body, 27px line-height — optimized purely for reading
+
+import React from "react";
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
-  Image,
   TouchableOpacity,
-  Share,
-  Alert,
   Dimensions,
   StatusBar,
-  Platform,
 } from "react-native";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import Animated, {
-  FadeInDown,
-  FadeInUp,
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-} from "react-native-reanimated";
-import { ScreenContainer } from "../components/common/ScreenContainer";
-import { EmptyState } from "../components/common/EmptyState";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { blogsContent } from "../data/content";
-import { colors, spacing, typography, shadows } from "../theme";
+import { colors, spacing } from "../theme";
 
 const { width } = Dimensions.get("window");
 
-// FNP Brand Colors
-const fnpColors = {
-  primary: "#2E7D32",
-  primaryLight: "#E8F5E9",
-  primaryDark: "#1B5E20",
-  gold: "#FFD700",
-  white: "#FFFFFF",
-  text: "#1A1A1A",
-  textSecondary: "#666666",
-  textMuted: "#999999",
-  borderLight: "#E8E8E8",
-  success: "#4CAF50",
-  warning: "#FF9800",
-  danger: "#F44336",
-};
-
-// Helper: calculate read time (~200 words per minute)
 const getReadTime = (content) => {
   const words = content?.split(/\s+/).length || 0;
   const mins = Math.ceil(words / 200);
   return mins < 1 ? "< 1 min read" : `${mins} min read`;
 };
 
-// Helper: format date
 const formatDate = (dateString) => {
-  if (!dateString) return "No date";
+  if (!dateString) return "";
   try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
+    return new Date(dateString).toLocaleDateString("en-IN", {
       day: "numeric",
+      month: "long",
+      year: "numeric",
     });
-  } catch {
-    return dateString;
-  }
+  } catch { return dateString; }
 };
 
 export function BlogDetailsScreen({ navigation, route }) {
   const blogId = route.params?.id || route.params?.blogId;
   const blog = blogsContent.blogs?.find((item) => item.id === blogId);
 
-  // Local state for interactive features
-  const [isLiked, setIsLiked] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(false);
-  const [likeCount, setLikeCount] = useState(blog?.likes || 0);
-  const [isFollowing, setIsFollowing] = useState(false);
-
-  // Animation values
-  const headerOpacity = useSharedValue(0);
-  const headerScale = useSharedValue(0.95);
-
-  useEffect(() => {
-    headerOpacity.value = withTiming(1, { duration: 600 });
-    headerScale.value = withSpring(1);
-  }, []);
-
-  const animatedHeaderStyle = useAnimatedStyle(() => ({
-    opacity: headerOpacity.value,
-    transform: [{ scale: headerScale.value }],
-  }));
-
-  // Share blog
-  const handleShare = async () => {
-    try {
-      await Share.share({
-        message: `🌿 ${blog?.title || "Check out this article"}\n\n${blog?.content?.slice(0, 200)}...\n\nRead more on Green Fibre App`,
-        title: blog?.title || "Green Fibre Blog",
-      });
-    } catch (error) {
-      Alert.alert("Error", "Unable to share at the moment.");
-    }
-  };
-
-  // Handle Like
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    setLikeCount((prev) => (isLiked ? prev - 1 : prev + 1));
-  };
-
-  // Handle Bookmark
-  const handleBookmark = () => {
-    setIsBookmarked(!isBookmarked);
-    Alert.alert(
-      isBookmarked ? "Removed from Bookmarks" : "Bookmarked!",
-      isBookmarked
-        ? "This article has been removed from your bookmarks."
-        : "This article has been saved to your bookmarks.",
-    );
-  };
-
-  // If no blog found, show empty state
   if (!blog) {
     return (
-      <ScreenContainer
-        onMenuPress={() => navigation.openDrawer()}
-        headerTitle="Blog"
-      >
-        <EmptyState
-          icon="document-text-outline"
-          title="Article Not Found"
-          message="The requested article does not exist."
-          actionLabel="Back to Blogs"
-          onAction={() => navigation.goBack()}
-        />
-      </ScreenContainer>
+      <View style={styles.notFound}>
+        <Text style={styles.notFoundText}>Article not found</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={styles.backLink}>← Go back</Text>
+        </TouchableOpacity>
+      </View>
     );
   }
 
-  // Destructure blog fields with fallbacks
-  const {
-    title,
-    subtitle,
-    content,
-    author = "Unknown Author",
-    date = new Date().toISOString(),
-    image = "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800",
-    tags = [],
-    category = "Lifestyle",
-  } = blog;
-
-  const readTime = getReadTime(content);
-  const formattedDate = formatDate(date);
+  const readTime = getReadTime(blog.content);
+  const paragraphs = (blog.content || "").split("\n\n").filter(Boolean);
+  const firstParagraph = paragraphs[0] || "";
+  const restParagraphs = paragraphs.slice(1);
 
   return (
-    <ScreenContainer
-      onMenuPress={() => navigation.openDrawer()}
-      headerTitle=""
-      headerRight={
-        <View style={styles.headerRightContainer}>
-          <TouchableOpacity
-            onPress={handleShare}
-            style={styles.headerIconBtn}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="share-outline" size={22} color={fnpColors.text} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleBookmark}
-            style={styles.headerIconBtn}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={isBookmarked ? "bookmark" : "bookmark-outline"}
-              size={22}
-              color={isBookmarked ? fnpColors.primary : fnpColors.text}
-            />
-          </TouchableOpacity>
-        </View>
-      }
-    >
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View style={styles.root}>
+      <StatusBar barStyle="light-content" />
+      <ScrollView showsVerticalScrollIndicator={false}>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContainer}
-      >
-        {/* ===== COVER IMAGE WITH OVERLAY ===== */}
-        <Animated.View style={[styles.imageWrapper, animatedHeaderStyle]}>
+        {/* ── HERO IMAGE ────────────────────────────────────── */}
+        <View style={styles.heroWrap}>
           <Image
-            source={{ uri: image }}
-            style={styles.coverImage}
-            resizeMode="cover"
+            source={{
+              uri: blog.image || "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=900&q=80",
+            }}
+            style={styles.heroImage}
+            contentFit="cover"
+            transition={300}
           />
           <LinearGradient
-            colors={["transparent", "rgba(0,0,0,0.7)"]}
-            style={styles.imageOverlay}
-          >
-            <View style={styles.categoryBadge}>
-              <Text style={styles.categoryBadgeText}>{category}</Text>
-            </View>
-            <Text style={styles.overlayTitle}>{title}</Text>
-            {subtitle && <Text style={styles.overlaySubtitle}>{subtitle}</Text>}
-          </LinearGradient>
-        </Animated.View>
+            colors={["transparent", colors.background]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 0, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
 
-        {/* ===== METADATA: AUTHOR, DATE, READ TIME ===== */}
-        <Animated.View
-          entering={FadeInDown.delay(100).duration(500)}
-          style={styles.metadataRow}
-        >
-          <View style={styles.authorAvatar}>
-            <Text style={styles.avatarText}>
-              {author.charAt(0).toUpperCase()}
-            </Text>
-          </View>
-          <View style={styles.authorInfo}>
-            <View style={styles.authorNameRow}>
-              <Text style={styles.authorName}>{author}</Text>
-              <TouchableOpacity
-                style={[styles.followBtn, isFollowing && styles.followingBtn]}
-                onPress={() => setIsFollowing(!isFollowing)}
-              >
-                <Text
-                  style={[
-                    styles.followBtnText,
-                    isFollowing && styles.followingBtnText,
-                  ]}
-                >
-                  {isFollowing ? "Following" : "Follow"}
-                </Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.dateRow}>
-              <Ionicons
-                name="calendar-outline"
-                size={14}
-                color={fnpColors.textMuted}
-              />
-              <Text style={styles.dateText}>{formattedDate}</Text>
-              <Ionicons
-                name="time-outline"
-                size={14}
-                color={fnpColors.textMuted}
-                style={styles.timeIcon}
-              />
-              <Text style={styles.dateText}>{readTime}</Text>
-            </View>
-          </View>
-        </Animated.View>
-
-        {/* ===== TAGS ===== */}
-        {tags.length > 0 && (
-          <Animated.View
-            entering={FadeInUp.delay(150).duration(500)}
-            style={styles.tagsContainer}
-          >
-            {tags.map((tag, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.tag}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.tagText}>#{tag}</Text>
-              </TouchableOpacity>
-            ))}
-          </Animated.View>
-        )}
-
-        {/* ===== BLOG CONTENT ===== */}
-        <Animated.View
-          entering={FadeInDown.delay(200).duration(500)}
-          style={styles.contentWrapper}
-        >
-          <Text style={styles.contentText}>{content}</Text>
-        </Animated.View>
-
-        {/* ===== DIVIDER ===== */}
-        <View style={styles.divider} />
-
-        {/* ===== INTERACTIVE ACTION BAR ===== */}
-        <Animated.View
-          entering={FadeInUp.delay(250).duration(500)}
-          style={styles.actionBar}
-        >
+          {/* Back button */}
           <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handleLike}
-            activeOpacity={0.7}
+            style={styles.backBtn}
+            onPress={() => navigation.goBack()}
           >
-            <View style={styles.actionIconWrap}>
-              <Ionicons
-                name={isLiked ? "heart" : "heart-outline"}
-                size={24}
-                color={isLiked ? fnpColors.danger : fnpColors.textSecondary}
-              />
-              {likeCount > 0 && (
-                <View style={styles.actionCountBadge}>
-                  <Text style={styles.actionCountText}>{likeCount}</Text>
-                </View>
-              )}
-            </View>
-            <Text
-              style={[styles.actionLabel, isLiked && styles.actionLabelActive]}
-            >
-              {isLiked ? "Liked" : "Like"}
-            </Text>
+            <Ionicons name="arrow-back" size={20} color={colors.white} />
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handleBookmark}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={isBookmarked ? "bookmark" : "bookmark-outline"}
-              size={24}
-              color={isBookmarked ? fnpColors.primary : fnpColors.textSecondary}
-            />
-            <Text
-              style={[
-                styles.actionLabel,
-                isBookmarked && styles.actionLabelActive,
-              ]}
-            >
-              {isBookmarked ? "Saved" : "Save"}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handleShare}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name="share-social-outline"
-              size={24}
-              color={fnpColors.textSecondary}
-            />
-            <Text style={styles.actionLabel}>Share</Text>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* ===== RELATED ARTICLES (Optional) ===== */}
-        <View style={styles.relatedSection}>
-          <Text style={styles.relatedTitle}>📖 You Might Also Like</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.relatedScroll}
-          >
-            {blogsContent.blogs
-              ?.filter((b) => b.id !== blogId)
-              .slice(0, 5)
-              .map((relatedBlog, index) => (
-                <TouchableOpacity
-                  key={relatedBlog.id}
-                  style={styles.relatedCard}
-                  onPress={() =>
-                    navigation.replace("BlogDetails", { id: relatedBlog.id })
-                  }
-                  activeOpacity={0.8}
-                >
-                  <Image
-                    source={{
-                      uri:
-                        relatedBlog.image ||
-                        "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400",
-                    }}
-                    style={styles.relatedImage}
-                  />
-                  <Text style={styles.relatedCardTitle} numberOfLines={2}>
-                    {relatedBlog.title}
-                  </Text>
-                  <Text style={styles.relatedCardRead}>
-                    {getReadTime(relatedBlog.content)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-          </ScrollView>
         </View>
 
-        {/* ===== BACK TO BLOGS BUTTON ===== */}
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.8}
-        >
-          <LinearGradient
-            colors={[fnpColors.primary, fnpColors.primaryDark]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.backButtonGradient}
-          >
-            <Ionicons name="arrow-back-circle-outline" size={24} color="#fff" />
-            <Text style={styles.backButtonText}>Back to Blogs</Text>
-          </LinearGradient>
-        </TouchableOpacity>
+        {/* ── ARTICLE BODY ─────────────────────────────────── */}
+        <Animated.View entering={FadeInDown.duration(400)} style={styles.article}>
 
-        {/* ===== FOOTER SPACER ===== */}
-        <View style={styles.footerSpace} />
+          {/* Category overline */}
+          {blog.category && (
+            <Text style={styles.overline}>{blog.category.toUpperCase()}</Text>
+          )}
+
+          {/* Headline — Playfair Display */}
+          <Text style={styles.headline}>{blog.title}</Text>
+
+          {/* Byline */}
+          <View style={styles.byline}>
+            <View style={styles.authorAvatar}>
+              <Text style={styles.authorInitial}>
+                {blog.author?.charAt(0)?.toUpperCase() || "G"}
+              </Text>
+            </View>
+            <View>
+              <Text style={styles.authorName}>{blog.author || "Green Fibre"}</Text>
+              <View style={styles.metaRow}>
+                <Text style={styles.metaText}>{formatDate(blog.date)}</Text>
+                <Text style={styles.metaDot}>·</Text>
+                <Ionicons name="time-outline" size={12} color={colors.textMuted} />
+                <Text style={styles.metaText}>{readTime}</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Divider */}
+          <View style={styles.ruleDivider} />
+
+          {/* ── FIRST PARAGRAPH WITH DROP-CAP ── */}
+          {firstParagraph.length > 0 && (
+            <View style={styles.firstParaWrap}>
+              {/* Drop-cap: first letter large */}
+              <Text style={styles.dropCap}>
+                {firstParagraph.charAt(0)}
+              </Text>
+              <Text style={styles.bodyText}>
+                {firstParagraph.slice(1)}
+              </Text>
+            </View>
+          )}
+
+          {/* ── REST OF CONTENT ── */}
+          {restParagraphs.map((para, i) => {
+            // Simple heading detection: starts with "##" or "**"
+            const isHeading = para.startsWith("##") || para.startsWith("**");
+            if (isHeading) {
+              return (
+                <Text key={i} style={styles.subHeading}>
+                  {para.replace(/^##\s*|^\*\*/g, "").replace(/\*\*$/g, "")}
+                </Text>
+              );
+            }
+            return (
+              <Text key={i} style={styles.bodyText}>
+                {para}
+              </Text>
+            );
+          })}
+
+          {/* ── TAGS ── */}
+          {blog.tags?.length > 0 && (
+            <View style={styles.tagsWrap}>
+              {blog.tags.map((tag, i) => (
+                <View key={i} style={styles.tagPill}>
+                  <Text style={styles.tagText}>#{tag}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* ── BACK TO JOURNAL ── */}
+          <TouchableOpacity
+            style={styles.backToJournal}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={14} color={colors.primary} />
+            <Text style={styles.backToJournalText}>Back to Journal</Text>
+          </TouchableOpacity>
+        </Animated.View>
       </ScrollView>
-    </ScreenContainer>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContainer: {
-    paddingBottom: 30,
-  },
-  headerRightContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  headerIconBtn: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: "#F5F5F5",
-  },
-
-  // ---- Cover Image ----
-  imageWrapper: {
-    position: "relative",
-    height: 320,
-    width: "100%",
-    marginHorizontal: 0,
-  },
-  coverImage: {
-    height: "100%",
-    width: "100%",
-  },
-  imageOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 20,
-    paddingVertical: 24,
-  },
-  categoryBadge: {
-    backgroundColor: fnpColors.primary,
-    alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 20,
-    marginBottom: 8,
-  },
-  categoryBadgeText: {
-    color: fnpColors.white,
-    fontSize: 11,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  overlayTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#fff",
-    lineHeight: 36,
-  },
-  overlaySubtitle: {
-    fontSize: 16,
-    color: "#f0f0f0",
-    marginTop: 4,
-    fontWeight: "400",
-    opacity: 0.9,
-  },
-
-  // ---- Metadata ----
-  metadataRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: fnpColors.borderLight,
-  },
-  authorAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: fnpColors.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 14,
-    ...shadows.small,
-  },
-  avatarText: {
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "600",
-  },
-  authorInfo: {
+  root: {
     flex: 1,
-  },
-  authorNameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  authorName: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: fnpColors.text,
-  },
-  followBtn: {
-    backgroundColor: fnpColors.primaryLight,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  followingBtn: {
-    backgroundColor: fnpColors.success,
-  },
-  followBtnText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: fnpColors.primary,
-  },
-  followingBtnText: {
-    color: "#fff",
-  },
-  dateRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 4,
-  },
-  dateText: {
-    fontSize: 13,
-    color: fnpColors.textMuted,
-    marginLeft: 4,
-  },
-  timeIcon: {
-    marginLeft: 12,
+    backgroundColor: colors.background,
   },
 
-  // ---- Tags ----
-  tagsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: "#FAFAFA",
-  },
-  tag: {
-    backgroundColor: fnpColors.primaryLight,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    marginRight: 8,
-    marginBottom: 6,
-  },
-  tagText: {
-    fontSize: 13,
-    color: fnpColors.primary,
-    fontWeight: "600",
-  },
-
-  // ---- Content ----
-  contentWrapper: {
-    backgroundColor: "#fff",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  contentText: {
-    fontSize: 17,
-    lineHeight: 28,
-    color: fnpColors.text,
-  },
-
-  // ---- Divider ----
-  divider: {
-    height: 1,
-    backgroundColor: fnpColors.borderLight,
-    marginHorizontal: 20,
-    marginVertical: 16,
-  },
-
-  // ---- Action Bar ----
-  actionBar: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    paddingVertical: 16,
-    backgroundColor: "#fff",
-    marginHorizontal: 20,
-    borderRadius: 16,
-    ...shadows.soft,
-  },
-  actionButton: {
-    alignItems: "center",
-    paddingHorizontal: 12,
-    gap: 4,
-  },
-  actionIconWrap: {
+  // ── Hero ─────────────────────────────────────────────────
+  heroWrap: {
+    height: 280,
     position: "relative",
+    backgroundColor: colors.primaryDark,
   },
-  actionCountBadge: {
+  heroImage: {
+    width: "100%",
+    height: "100%",
+  },
+  backBtn: {
     position: "absolute",
-    top: -8,
-    right: -8,
-    backgroundColor: fnpColors.primary,
-    borderRadius: 10,
-    minWidth: 18,
-    height: 18,
-    justifyContent: "center",
+    top: 48,
+    left: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(18,46,26,0.5)",
     alignItems: "center",
-    paddingHorizontal: 4,
-  },
-  actionCountText: {
-    color: "#fff",
-    fontSize: 9,
-    fontWeight: "700",
-  },
-  actionLabel: {
-    fontSize: 12,
-    color: fnpColors.textMuted,
-    fontWeight: "500",
-  },
-  actionLabelActive: {
-    color: fnpColors.primary,
-    fontWeight: "600",
+    justifyContent: "center",
   },
 
-  // ---- Related Articles ----
-  relatedSection: {
-    marginTop: 20,
-    paddingHorizontal: 20,
+  // ── Article ───────────────────────────────────────────────
+  article: {
+    paddingHorizontal: 24,
+    paddingTop: 28,
+    paddingBottom: 60,
   },
-  relatedTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: fnpColors.text,
+  overline: {
+    fontFamily: "DMMono_500Medium",
+    fontSize: 10,
+    letterSpacing: 2,
+    color: colors.primary,
     marginBottom: 12,
   },
-  relatedScroll: {
-    flexDirection: "row",
+  headline: {
+    fontFamily: "PlayfairDisplay_700Bold",
+    fontSize: 30,
+    lineHeight: 40,
+    color: colors.textPrimary,
+    marginBottom: 20,
   },
-  relatedCard: {
-    width: 150,
-    marginRight: 12,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    overflow: "hidden",
-    ...shadows.soft,
-  },
-  relatedImage: {
-    width: "100%",
-    height: 100,
-    backgroundColor: "#F5F5F5",
-  },
-  relatedCardTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: fnpColors.text,
-    paddingHorizontal: 10,
-    paddingTop: 8,
-    paddingBottom: 4,
-  },
-  relatedCardRead: {
-    fontSize: 11,
-    color: fnpColors.textMuted,
-    paddingHorizontal: 10,
-    paddingBottom: 10,
-  },
-
-  // ---- Back Button ----
-  backButton: {
-    marginHorizontal: 20,
-    marginTop: 16,
-    borderRadius: 16,
-    overflow: "hidden",
-    ...shadows.medium,
-  },
-  backButtonGradient: {
+  byline: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 14,
-    gap: 8,
+    gap: 12,
+    marginBottom: 24,
   },
-  backButtonText: {
-    color: "#fff",
+  authorAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.primarySurface,
+    borderWidth: 1,
+    borderColor: colors.primaryMuted,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  authorInitial: {
+    fontFamily: "DMSans_700Bold",
     fontSize: 16,
-    fontWeight: "600",
+    color: colors.primary,
+  },
+  authorName: {
+    fontFamily: "DMSans_600SemiBold",
+    fontSize: 14,
+    color: colors.textPrimary,
+    marginBottom: 2,
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  metaText: {
+    fontFamily: "DMSans_400Regular",
+    fontSize: 12,
+    color: colors.textMuted,
+  },
+  metaDot: {
+    color: colors.textMuted,
+    fontSize: 12,
+  },
+  ruleDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginBottom: 28,
   },
 
-  // ---- Footer ----
-  footerSpace: {
-    height: 20,
+  // ── Drop-cap first paragraph ──────────────────────────────
+  firstParaWrap: {
+    marginBottom: 22,
+  },
+  dropCap: {
+    fontFamily: "PlayfairDisplay_700Bold",
+    fontSize: 68,
+    lineHeight: 60,
+    color: colors.primary,
+    float: "left",  // React Native doesn't support float — use positioning
+    marginRight: 6,
+    // Simulate drop cap: wrap in a row or use nested text
+  },
+  // ── Body text ─────────────────────────────────────────────
+  bodyText: {
+    fontFamily: "DMSans_400Regular",
+    fontSize: 17,
+    lineHeight: 28,
+    color: colors.text,
+    marginBottom: 22,
+    letterSpacing: 0.1,
+  },
+  subHeading: {
+    fontFamily: "PlayfairDisplay_600SemiBold",
+    fontSize: 22,
+    lineHeight: 30,
+    color: colors.textPrimary,
+    marginTop: 10,
+    marginBottom: 14,
+  },
+
+  // ── Tags ──────────────────────────────────────────────────
+  tagsWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 32,
+    marginBottom: 32,
+  },
+  tagPill: {
+    borderRadius: 50,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    backgroundColor: colors.primarySurface,
+    borderWidth: 1,
+    borderColor: colors.primaryMuted,
+  },
+  tagText: {
+    fontFamily: "DMMono_400Regular",
+    fontSize: 11,
+    color: colors.primary,
+    letterSpacing: 0.5,
+  },
+
+  // ── Back to journal ───────────────────────────────────────
+  backToJournal: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    borderBottomWidth: 1,
+    borderBottomColor: colors.primary + "50",
+    paddingBottom: 2,
+  },
+  backToJournalText: {
+    fontFamily: "DMSans_500Medium",
+    fontSize: 14,
+    color: colors.primary,
+  },
+
+  // ── Not found ─────────────────────────────────────────────
+  notFound: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background,
+    padding: 40,
+  },
+  notFoundText: {
+    fontFamily: "PlayfairDisplay_600SemiBold",
+    fontSize: 22,
+    color: colors.textPrimary,
+    marginBottom: 16,
+  },
+  backLink: {
+    fontFamily: "DMSans_500Medium",
+    fontSize: 15,
+    color: colors.primary,
   },
 });
