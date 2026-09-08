@@ -1,24 +1,47 @@
-const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/400x400/E8E8E8/999999?text=Product';
+const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop&q=80';
+
+/**
+ * Returns the server origin (e.g. "http://192.168.1.33:5500") by stripping the
+ * /api path segment from EXPO_PUBLIC_API_URL. Falls back to the production host.
+ */
+function getServerOrigin() {
+    try {
+        const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'https://api.greenfibre.org/api';
+        const url = new URL(apiUrl);
+        return url.origin; // e.g. "http://192.168.1.33:5500"
+    } catch {
+        return 'https://api.greenfibre.org';
+    }
+}
+
+/**
+ * Converts a possibly-relative image path to an absolute URL.
+ * Handles paths like "/products/img.jpg" or "products/img.jpg" or full URLs.
+ */
+function toAbsoluteUrl(path) {
+    if (!path || typeof path !== 'string') return null;
+    const trimmed = path.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+    const cleanPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+    return `${getServerOrigin()}${cleanPath}`;
+}
 
 export function resolveImageUrl(image) {
-    if (!image) {
-        return null;
-    }
+    if (!image) return null;
 
     if (typeof image === 'string') {
-        if (image.startsWith('http://') || image.startsWith('https://')) {
-            return image;
-        }
-        return image;
+        return toAbsoluteUrl(image);
     }
 
     if (typeof image === 'object') {
-        return image.thumbnail
+        const path = image.thumbnail
             || image.card
             || image.medium
             || image.large
             || image.original
             || null;
+        return toAbsoluteUrl(path);
     }
 
     return null;

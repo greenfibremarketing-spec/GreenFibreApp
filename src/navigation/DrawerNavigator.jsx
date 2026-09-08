@@ -1483,7 +1483,7 @@ function CustomDrawerContent({ ...props }) {
                   source={{
                     uri:
                       images.logo ||
-                      "https://via.placeholder.com/120x40/FFFFFF/FFFFFF?text=Logo",
+                      "https://www.greenfibre.org/logo-main.png",
                   }}
                   style={styles.drawerLogo}
                   contentFit="contain"
@@ -1508,7 +1508,7 @@ function CustomDrawerContent({ ...props }) {
                   source={{
                     uri:
                       user?.avatar ||
-                      "https://via.placeholder.com/100/FFFFFF/FFFFFF?text=User",
+                      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80",
                   }}
                   style={styles.userAvatar}
                   contentFit="cover"

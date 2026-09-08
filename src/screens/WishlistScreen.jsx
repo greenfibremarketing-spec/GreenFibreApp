@@ -27,6 +27,7 @@ import {
 import { addToCart, addToGuestCart } from "../store/thunks/cartThunks";
 import { showToast } from "../store/slices/uiSlice";
 import { validateCartSelection } from "../utils/cartSelection";
+import { resolveImageUrl, PLACEHOLDER_IMAGE } from "../utils/catalogNormalize";
 
 const { width } = Dimensions.get("window");
 
@@ -360,9 +361,9 @@ export function WishlistScreen({ navigation }) {
             <Image
               source={{
                 uri:
-                  item.image ||
-                  item.images?.[0] ||
-                  "https://via.placeholder.com/200/2E7D32/FFFFFF?text=Product",
+                  resolveImageUrl(item.image) ||
+                  resolveImageUrl(item.images?.[0]) ||
+                  PLACEHOLDER_IMAGE,
               }}
               style={styles.productImage}
               contentFit="cover"

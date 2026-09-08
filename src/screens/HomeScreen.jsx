@@ -47,6 +47,7 @@ import { fetchCategories } from "../store/slices/categoriesSlice";
 import { addToCart, addToGuestCart } from "../store/thunks/cartThunks";
 import { validateCartSelection } from "../utils/cartSelection";
 import { selectCartBadgeCount } from "../store/slices/cartSlice";
+import { resolveImageUrl, PLACEHOLDER_IMAGE } from "../utils/catalogNormalize";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -54,10 +55,6 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 const scale = (size) => (screenWidth / 375) * size;
 const moderateScale = (size, factor = 0.5) =>
   size + (scale(size) - size) * factor;
-
-// Placeholder image
-const PLACEHOLDER_IMAGE =
-  "https://via.placeholder.com/400x400/2E7D32/FFFFFF?text=Product";
 
 // ============================================================
 // 📦 ENHANCED DATA (FNP Style + More)
@@ -207,7 +204,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const searchInputRef = useRef(null);
 
-  const { featured, products, loading } = useAppSelector(
+  const { featured, products, loading, error: productsError } = useAppSelector(
     (state) => state.products,
   );
   const apiCategories = useAppSelector((state) => state.categories.categories);
@@ -216,19 +213,12 @@ export default function HomeScreen() {
 
   // State
   const [refreshing, setRefreshing] = useState(false);
-  const [showFlashSale, setShowFlashSale] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
-
-  const [timeLeft, setTimeLeft] = useState({
-    hours: 2,
-    minutes: 45,
-    seconds: 30,
-  });
 
   const categoryUiList = useMemo(() => {
     return apiCategories.map((category) => {
@@ -258,22 +248,14 @@ export default function HomeScreen() {
   const getProductImage = useCallback((product) => {
     if (!product) return PLACEHOLDER_IMAGE;
 
-    // Check multiple image sources
-    if (product.images && product.images.length > 0) {
-      const firstImage = product.images[0];
-      if (typeof firstImage === "string") {
-        return firstImage || PLACEHOLDER_IMAGE;
-      }
-      if (firstImage && firstImage.url) {
-        return firstImage.url || PLACEHOLDER_IMAGE;
-      }
-    }
+    const raw =
+      product.image ||
+      product.images?.[0]?.url ||
+      product.images?.[0] ||
+      product.colors?.[0]?.images?.[0] ||
+      null;
 
-    if (product.image) {
-      return product.image || PLACEHOLDER_IMAGE;
-    }
-
-    return PLACEHOLDER_IMAGE;
+    return resolveImageUrl(raw) || PLACEHOLDER_IMAGE;
   }, []);
 
   // ============================================================
@@ -336,29 +318,7 @@ export default function HomeScreen() {
     return () => clearInterval(interval);
   }, []);
 
-  // Flash sale timer
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        let { hours, minutes, seconds } = prev;
-        seconds--;
-        if (seconds < 0) {
-          seconds = 59;
-          minutes--;
-          if (minutes < 0) {
-            minutes = 59;
-            hours--;
-            if (hours < 0) {
-              clearInterval(timer);
-              return { hours: 0, minutes: 0, seconds: 0 };
-            }
-          }
-        }
-        return { hours, minutes, seconds };
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+
 
   useEffect(() => {
     dispatch(fetchProducts());
@@ -519,27 +479,7 @@ export default function HomeScreen() {
     );
   };
 
-  // Render Flash Sale Timer
-  const renderFlashSaleTimer = () => {
-    return (
-      <View style={styles.timerContainer}>
-        <Text style={styles.timerLabel}>⏰ Ends in</Text>
-        <View style={styles.timerBox}>
-          <Text style={styles.timerText}>
-            {String(timeLeft.hours).padStart(2, "0")}
-          </Text>
-          <Text style={styles.timerColon}>:</Text>
-          <Text style={styles.timerText}>
-            {String(timeLeft.minutes).padStart(2, "0")}
-          </Text>
-          <Text style={styles.timerColon}>:</Text>
-          <Text style={styles.timerText}>
-            {String(timeLeft.seconds).padStart(2, "0")}
-          </Text>
-        </View>
-      </View>
-    );
-  };
+
 
   // Render search result item
   const renderSearchResultItem = ({ item }) => {
@@ -662,38 +602,7 @@ export default function HomeScreen() {
     );
   };
 
-  // Render flash sale item
-  const renderFlashSaleItem = ({ item }) => {
-    const imageUrl = getProductImage(item);
 
-    return (
-      <TouchableOpacity
-        style={styles.flashSaleCard}
-        activeOpacity={0.8}
-        onPress={() => goToProductDetails(item)}
-      >
-        <Image
-          source={{ uri: imageUrl }}
-          style={styles.flashSaleImage}
-          contentFit="cover"
-          transition={300}
-          placeholder={PLACEHOLDER_IMAGE}
-        />
-        <Text style={styles.flashSaleName} numberOfLines={1}>
-          {item.name}
-        </Text>
-        <View style={styles.flashSalePriceRow}>
-          <Text style={styles.flashSalePrice}>₹{item.price}</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.flashSaleCartBtn}
-          onPress={() => handleAddToCart(item)}
-        >
-          <Ionicons name="cart-outline" size={moderateScale(16)} color="#fff" />
-        </TouchableOpacity>
-      </TouchableOpacity>
-    );
-  };
 
   // ============================================================
   // 🏗️ RENDER
@@ -824,6 +733,19 @@ export default function HomeScreen() {
             {renderBannerDots()}
           </Animated.View>
 
+          {/* Network Error Banner with Retry */}
+          {Boolean(productsError) && products?.length === 0 && (
+            <View style={styles.errorBanner}>
+              <Ionicons name="cloud-offline-outline" size={20} color="#D32F2F" />
+              <Text style={styles.errorBannerText} numberOfLines={2}>
+                {productsError}
+              </Text>
+              <TouchableOpacity style={styles.errorRetryBtn} onPress={onRefresh} activeOpacity={0.8}>
+                <Text style={styles.errorRetryText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* ============================================== */}
           {/* 🎯 QUICK CATEGORIES */}
           {/* ============================================== */}
@@ -889,38 +811,7 @@ export default function HomeScreen() {
             />
           </Animated.View>
 
-          {/* ============================================== */}
-          {/* ⚡ FLASH SALE */}
-          {/* ============================================== */}
-          {showFlashSale && products && products.length > 0 && (
-            <Animated.View
-              entering={FadeInDown.delay(200).duration(500)}
-              style={styles.flashSaleWrapper}
-            >
-              <View style={styles.flashSaleHeader}>
-                <View style={styles.flashSaleLeft}>
-                  <Text style={styles.flashSaleTitle}>⚡ Flash Sale</Text>
-                  {renderFlashSaleTimer()}
-                </View>
-                <TouchableOpacity onPress={() => setShowFlashSale(false)}>
-                  <Ionicons
-                    name="close-outline"
-                    size={moderateScale(20)}
-                    color="#666"
-                  />
-                </TouchableOpacity>
-              </View>
 
-              <FlatList
-                data={products.slice(0, 10)}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={(item) => item._id}
-                contentContainerStyle={styles.flashSaleList}
-                renderItem={renderFlashSaleItem}
-              />
-            </Animated.View>
-          )}
 
           {/* ============================================== */}
           {/* 🏆 LOYALTY PROGRAM */}
@@ -1809,114 +1700,7 @@ const styles = StyleSheet.create({
     color: "#666",
   },
 
-  // ===== FLASH SALE =====
-  flashSaleWrapper: {
-    paddingHorizontal: moderateScale(16),
-    marginBottom: moderateScale(8),
-  },
-  flashSaleHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "#FFF3E0",
-    padding: moderateScale(12),
-    borderRadius: moderateScale(16),
-    marginBottom: moderateScale(12),
-  },
-  flashSaleLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: moderateScale(12),
-    flexWrap: "wrap",
-  },
-  flashSaleTitle: {
-    fontSize: moderateScale(16),
-    fontWeight: "900",
-    color: "#E65100",
-  },
-  timerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: moderateScale(6),
-  },
-  timerLabel: {
-    fontSize: moderateScale(10),
-    fontWeight: "600",
-    color: "#666",
-  },
-  timerBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#1A1A1A",
-    paddingHorizontal: moderateScale(6),
-    paddingVertical: moderateScale(3),
-    borderRadius: moderateScale(8),
-  },
-  timerText: {
-    fontSize: moderateScale(12),
-    fontWeight: "900",
-    color: "#FFFFFF",
-    minWidth: moderateScale(18),
-    textAlign: "center",
-  },
-  timerColon: {
-    fontSize: moderateScale(12),
-    fontWeight: "900",
-    color: "#FFFFFF",
-  },
-  flashSaleList: {
-    gap: moderateScale(12),
-    paddingBottom: moderateScale(4),
-  },
-  flashSaleCard: {
-    width: moderateScale(140),
-    backgroundColor: "#FFFFFF",
-    borderRadius: moderateScale(16),
-    padding: moderateScale(10),
-    borderWidth: 1,
-    borderColor: "#F0F0F0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-    position: "relative",
-  },
-  flashSaleImage: {
-    width: "100%",
-    height: moderateScale(100),
-    borderRadius: moderateScale(12),
-    backgroundColor: "#F5F5F5",
-  },
-  flashSaleName: {
-    fontSize: moderateScale(12),
-    fontWeight: "700",
-    color: "#1A1A1A",
-    marginTop: moderateScale(6),
-    marginRight: moderateScale(24),
-  },
-  flashSalePriceRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: moderateScale(6),
-    marginTop: moderateScale(2),
-  },
-  flashSalePrice: {
-    fontSize: moderateScale(14),
-    fontWeight: "900",
-    color: "#E65100",
-  },
-  flashSaleCartBtn: {
-    position: "absolute",
-    bottom: moderateScale(10),
-    right: moderateScale(10),
-    backgroundColor: "#2E7D32",
-    width: moderateScale(28),
-    height: moderateScale(28),
-    borderRadius: moderateScale(14),
-    alignItems: "center",
-    justifyContent: "center",
-  },
+
 
   // ===== LOYALTY =====
   loyaltyCard: {
@@ -2650,5 +2434,35 @@ const styles = StyleSheet.create({
   },
   searchRecentTag: {
     backgroundColor: "#F0F0F0",
+  },
+  errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFEBEE",
+    paddingHorizontal: moderateScale(16),
+    paddingVertical: moderateScale(12),
+    marginHorizontal: moderateScale(16),
+    marginBottom: moderateScale(16),
+    borderRadius: moderateScale(12),
+    gap: moderateScale(10),
+    borderWidth: 1,
+    borderColor: "#FFCDD2",
+  },
+  errorBannerText: {
+    flex: 1,
+    fontSize: moderateScale(13),
+    color: "#C62828",
+    fontWeight: "500",
+  },
+  errorRetryBtn: {
+    backgroundColor: "#D32F2F",
+    paddingHorizontal: moderateScale(14),
+    paddingVertical: moderateScale(6),
+    borderRadius: moderateScale(8),
+  },
+  errorRetryText: {
+    color: "#FFFFFF",
+    fontSize: moderateScale(12),
+    fontWeight: "600",
   },
 });

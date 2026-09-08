@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { toggleWishlist as toggleWishlistThunk } from "../../store/thunks/wishlistThunks";
 import { selectIsInWishlist } from "../../store/slices/wishlistSlice";
 import { showToast } from "../../store/slices/uiSlice";
+import { resolveImageUrl, PLACEHOLDER_IMAGE } from "../../utils/catalogNormalize";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 48) / 2;
@@ -105,22 +106,31 @@ export function ProductCard({
   const cardWidth = isHorizontal ? width * 0.6 : CARD_WIDTH;
   const imageHeight = isHorizontal ? 160 : 160;
 
+  const [imageFailed, setImageFailed] = useState(false);
+
   // Safely access product properties
   const productName = product?.name || "Product Name";
   const productPrice = product?.price || 0;
   const productOriginalPrice = product?.originalPrice || null;
-  const productImage =
+  const rawImage =
     product?.image ||
     product?.images?.[0] ||
-    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSYOnLV6L1XFBOr96iaQOJe7T6ckbbO7MM2V_rRGnQMNA&s=10";
-  const productCategory = product?.categoryName || product?.category?.name || product?.category || "";
+    product?.colors?.[0]?.images?.[0] ||
+    null;
+  const resolvedUri = resolveImageUrl(rawImage);
+  const productImage = (!imageFailed && resolvedUri)
+    ? resolvedUri
+    : PLACEHOLDER_IMAGE;
+  const productCategory =
+    product?.categoryName ||
+    product?.category?.name ||
+    (typeof product?.category === "string" ? product.category : "");
   const productRating = product?.averageRating ?? product?.rating ?? null;
   const productReviewCount = product?.reviewCount || 0;
   const productStock = product?.totalStock ?? product?.stock;
   const isInStock = product?.inStock !== false;
   const isSustainable = product?.sustainable || false;
   const isNew = product?.isNew || false;
-  // const inStock = product?.inStock !== false; // No longer used
 
   return (
     <Reanimated.View
@@ -144,8 +154,9 @@ export function ProductCard({
             source={{ uri: productImage }}
             style={styles.image}
             contentFit="cover"
-            transition={500}
+            transition={300}
             cachePolicy="memory-disk"
+            onError={() => setImageFailed(true)}
           />
 
           {/* Image Overlay - removed to reduce visual clutter, keeping it subtle */}

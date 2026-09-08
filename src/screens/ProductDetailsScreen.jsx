@@ -15,7 +15,7 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { productService } from "../api/services/productService";
-import { getProductGalleryImages } from "../utils/catalogNormalize";
+import { getProductGalleryImages, normalizeProduct, resolveImageUrl, PLACEHOLDER_IMAGE } from "../utils/catalogNormalize";
 import { formatPrice } from "../utils/helpers";
 import { colors, spacing, typography, shadows } from "../theme";
 import { ScreenContainer } from "../components/common/ScreenContainer";
@@ -58,14 +58,21 @@ const natureColors = {
 };
 
 export function ProductDetailsScreen({ navigation, route }) {
-  const { productId } = route.params;
+  const productId =
+    route?.params?.productId ||
+    route?.params?.product?._id ||
+    route?.params?.product?.id;
+  const initialProduct = route?.params?.product
+    ? normalizeProduct(route.params.product)
+    : null;
+
   const dispatch = useAppDispatch();
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
   const isWishlisted = useAppSelector(selectIsInWishlist(productId));
   const cartLoading = useAppSelector((state) => state.cart.loading);
 
-  const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [product, setProduct] = useState(initialProduct);
+  const [loading, setLoading] = useState(!initialProduct);
   const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -82,21 +89,37 @@ export function ProductDetailsScreen({ navigation, route }) {
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
 
   const loadProduct = () => {
-    setLoading(true);
+    if (!productId) {
+      if (!product) {
+        setError("Product not found");
+        setLoading(false);
+      }
+      return;
+    }
+
+    if (!product) {
+      setLoading(true);
+    }
     setError(null);
     productService
       .getProductById(productId)
       .then((p) => {
         if (!p) {
-          setError("Product not found");
-          setProduct(null);
+          if (!product) {
+            setError("Product not found");
+            setProduct(null);
+          }
         } else {
           setProduct(p);
           setSelectedColorIndex(0);
           setSelectedImage(0);
         }
       })
-      .catch((err) => setError(err.message || "Failed to load product"))
+      .catch((err) => {
+        if (!product) {
+          setError(err.message || "Failed to load product");
+        }
+      })
       .finally(() => setLoading(false));
   };
 
@@ -319,33 +342,46 @@ export function ProductDetailsScreen({ navigation, route }) {
       )
     : 0;
 
-  // Render feature item
-  const renderFeature = ({ item, index }) => (
-    <Animated.View
-      style={[
-        styles.featureRow,
-        {
-          opacity: fadeAnim,
-          transform: [
-            {
-              translateX: slideAnim.interpolate({
-                inputRange: [0, 30],
-                outputRange: [0, 30],
-              }),
-            },
-          ],
-        },
-      ]}
-    >
-      <LinearGradient
-        colors={[natureColors.primaryLight, "#C8E6C9"]}
-        style={styles.featureIconWrap}
+  // Render feature item safely
+  const renderFeature = ({ item, index }) => {
+    const text =
+      typeof item === "string"
+        ? item
+        : item?.name ||
+          item?.title ||
+          item?.value ||
+          item?.feature ||
+          item?.description ||
+          "";
+    if (!text) return null;
+
+    return (
+      <Animated.View
+        style={[
+          styles.featureRow,
+          {
+            opacity: fadeAnim,
+            transform: [
+              {
+                translateX: slideAnim.interpolate({
+                  inputRange: [0, 30],
+                  outputRange: [0, 30],
+                }),
+              },
+            ],
+          },
+        ]}
       >
-        <Ionicons name="leaf-outline" size={14} color={natureColors.primary} />
-      </LinearGradient>
-      <Text style={styles.featureText}>{item}</Text>
-    </Animated.View>
-  );
+        <LinearGradient
+          colors={[natureColors.primaryLight, "#C8E6C9"]}
+          style={styles.featureIconWrap}
+        >
+          <Ionicons name="leaf-outline" size={14} color={natureColors.primary} />
+        </LinearGradient>
+        <Text style={styles.featureText}>{text}</Text>
+      </Animated.View>
+    );
+  };
 
   return (
     <ScreenContainer
@@ -383,12 +419,13 @@ export function ProductDetailsScreen({ navigation, route }) {
           <Image
             source={{
               uri:
-                mainImage ||
-                "https://via.placeholder.com/400x400/E8E8E8/999999?text=Product",
+                resolveImageUrl(mainImage) ||
+                PLACEHOLDER_IMAGE,
             }}
             style={styles.image}
             contentFit="cover"
-            transition={400}
+            transition={300}
+            cachePolicy="memory-disk"
           />
 
           {/* Nature-inspired decorative overlay */}
@@ -452,7 +489,7 @@ export function ProductDetailsScreen({ navigation, route }) {
                     activeOpacity={0.7}
                   >
                     <Image
-                      source={{ uri: img }}
+                      source={{ uri: resolveImageUrl(img) || PLACEHOLDER_IMAGE }}
                       style={styles.thumbnailImage}
                       contentFit="cover"
                     />
@@ -475,7 +512,11 @@ export function ProductDetailsScreen({ navigation, route }) {
                 <Ionicons name="paw-outline" size={14} color="#2E7D32" />
               </LinearGradient>
               <Text style={styles.category}>
-                {product.category || "Product"}
+                {product.categoryName ||
+                  product.category?.name ||
+                  (typeof product.category === "string"
+                    ? product.category
+                    : "Product")}
               </Text>
             </View>
             {product.inStock !== false && (
@@ -514,25 +555,40 @@ export function ProductDetailsScreen({ navigation, route }) {
             <View style={styles.colorSection}>
               <Text style={styles.sectionTitle}>Available Colors</Text>
               <View style={styles.colorRow}>
-                {product.colors.map((color, index) => (
-                  <TouchableOpacity
-                    key={`${color.name}-${index}`}
-                    style={[
-                      styles.colorSwatch,
-                      selectedColorIndex === index && styles.colorSwatchActive,
-                      { backgroundColor: color.hex || "#CCCCCC" },
-                    ]}
-                    onPress={() => {
-                      setSelectedColorIndex(index);
-                      setSelectedImage(0);
-                    }}
-                    activeOpacity={0.8}
-                  />
-                ))}
+                {product.colors.map((color, index) => {
+                  const colorHex =
+                    typeof color === "object" && color?.hex
+                      ? color.hex
+                      : "#CCCCCC";
+                  const colorName =
+                    typeof color === "object" && color?.name
+                      ? color.name
+                      : typeof color === "string"
+                      ? color
+                      : `Color ${index + 1}`;
+                  return (
+                    <TouchableOpacity
+                      key={`${colorName}-${index}`}
+                      style={[
+                        styles.colorSwatch,
+                        selectedColorIndex === index &&
+                          styles.colorSwatchActive,
+                        { backgroundColor: colorHex },
+                      ]}
+                      onPress={() => {
+                        setSelectedColorIndex(index);
+                        setSelectedImage(0);
+                      }}
+                      activeOpacity={0.8}
+                    />
+                  );
+                })}
               </View>
-              {product.colors[selectedColorIndex]?.name ? (
+              {product.colors[selectedColorIndex] ? (
                 <Text style={styles.colorName}>
-                  {product.colors[selectedColorIndex].name}
+                  {typeof product.colors[selectedColorIndex] === "object"
+                    ? product.colors[selectedColorIndex]?.name || ""
+                    : product.colors[selectedColorIndex]}
                 </Text>
               ) : null}
             </View>

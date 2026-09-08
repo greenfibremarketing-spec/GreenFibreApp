@@ -26,6 +26,7 @@ import {
   getShippingCost,
   FREE_SHIPPING_THRESHOLD,
 } from "../utils/helpers";
+import { resolveImageUrl, PLACEHOLDER_IMAGE } from "../utils/catalogNormalize";
 import { colors, spacing, typography, shadows } from "../theme";
 import { ScreenContainer } from "../components/common/ScreenContainer";
 import { Button } from "../components/common/Button";
@@ -130,10 +131,12 @@ export function CartScreen({ navigation }) {
           return null;
         }
 
-        const image =
+        const rawImage =
           item.image ||
           product.image ||
           product.colors?.[item.colorIndex]?.images?.[0];
+
+        const image = resolveImageUrl(rawImage) || PLACEHOLDER_IMAGE;
 
         return {
           ...item,
@@ -307,9 +310,9 @@ export function CartScreen({ navigation }) {
             <Image
               source={{
                 uri:
-                  item.image ||
-                  product.image ||
-                  "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400",
+                  resolveImageUrl(item.image) ||
+                  resolveImageUrl(product.image) ||
+                  PLACEHOLDER_IMAGE,
               }}
               style={styles.itemImage}
               contentFit="cover"

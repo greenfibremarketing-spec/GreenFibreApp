@@ -36,6 +36,7 @@ import {
 } from "../store/slices/cartSlice";
 import { fetchCart } from "../store/thunks/cartThunks";
 import { createOrder } from "../store/slices/ordersSlice";
+import { resolveImageUrl } from "../utils/catalogNormalize";
 
 const { width } = Dimensions.get("window");
 
@@ -459,10 +460,12 @@ export function CheckoutScreen({ navigation }) {
               <Text style={styles.itemCountText}>{itemCount} items</Text>
             </View>
 
-            {cartItems.map((item) => (
+            {cartItems.map((item) => {
+              const itemImg = resolveImageUrl(item.image);
+              return (
               <View key={item.lineKey} style={styles.cartItemRow}>
-                {item.image ? (
-                  <Image source={{ uri: item.image }} style={styles.cartItemThumb} contentFit="cover" />
+                {itemImg ? (
+                  <Image source={{ uri: itemImg }} style={styles.cartItemThumb} contentFit="cover" />
                 ) : (
                   <View style={styles.cartItemThumbPlaceholder}>
                     <Ionicons name="image-outline" size={18} color={fnpColors.textMuted} />
@@ -481,7 +484,8 @@ export function CheckoutScreen({ navigation }) {
                   {formatPrice((item.price || 0) * item.quantity)}
                 </Text>
               </View>
-            ))}
+              );
+            })}
 
             <View style={[styles.summaryRow, styles.totalRow]}>
               <View>

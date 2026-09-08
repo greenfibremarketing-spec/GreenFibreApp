@@ -23,6 +23,7 @@ import {
   selectOrdersLoading,
   selectOrdersError,
 } from "../store/slices/ordersSlice";
+import { resolveImageUrl } from "../utils/catalogNormalize";
 
 const fnpColors = {
   primary: "#2E7D32",
@@ -323,10 +324,12 @@ export function TrackOrderScreen({ route }) {
           {displayOrder.items?.length > 0 ? (
             <>
               <Text style={styles.sectionTitle}>Order Items</Text>
-              {displayOrder.items.map((item, index) => (
+              {displayOrder.items.map((item, index) => {
+                const itemImg = resolveImageUrl(item.image);
+                return (
                 <View key={`${item.productId || index}-${item.colorIndex}`} style={styles.itemRow}>
-                  {item.image ? (
-                    <Image source={{ uri: item.image }} style={styles.itemThumb} contentFit="cover" />
+                  {itemImg ? (
+                    <Image source={{ uri: itemImg }} style={styles.itemThumb} contentFit="cover" />
                   ) : (
                     <View style={styles.itemThumbPlaceholder}>
                       <Ionicons name="image-outline" size={18} color={fnpColors.textMuted} />
@@ -339,9 +342,10 @@ export function TrackOrderScreen({ route }) {
                       {item.colorName ? ` • ${item.colorName}` : ""}
                     </Text>
                   </View>
-                  <Text style={styles.itemPrice}>{formatPrice(item.price || 0)}</Text>
+                  <Text style={styles.itemPrice}>{formatPrice((item.price || 0) * item.quantity)}</Text>
                 </View>
-              ))}
+                );
+              })}
             </>
           ) : null}
 

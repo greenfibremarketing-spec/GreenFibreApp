@@ -19,6 +19,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 
 import { formatPrice } from "../utils/helpers";
+import { resolveImageUrl, PLACEHOLDER_IMAGE } from "../utils/catalogNormalize";
 import { colors, spacing, typography, shadows } from "../theme";
 import { ScreenContainer } from "../components/common/ScreenContainer";
 import { EmptyState } from "../components/common/EmptyState";
@@ -216,8 +217,8 @@ const OrderCard = ({ order, onPress }) => {
                 <Image
                   source={{
                     uri:
-                      item.image ||
-                      "https://via.placeholder.com/52x52/E8E8E8/999999?text=Item",
+                      resolveImageUrl(item.image) ||
+                      PLACEHOLDER_IMAGE,
                   }}
                   style={styles.itemThumb}
                   contentFit="cover"
