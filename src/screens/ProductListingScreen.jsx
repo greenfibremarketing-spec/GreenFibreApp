@@ -75,7 +75,7 @@ const sortOptions = [
 const filterOptions = [
   { id: "all", label: "All", icon: "apps-outline" },
   { id: "sustainable", label: "Sustainable", icon: "leaf-outline" },
-  { id: "eco_friendly", label: "Eco Friendly", icon: "recycle-outline" },
+  { id: "eco_friendly", label: "Eco Friendly", icon: "sync-outline" },
   { id: "handmade", label: "Handmade", icon: "hammer-outline" },
   { id: "organic", label: "Organic", icon: "flower-outline" },
 ];

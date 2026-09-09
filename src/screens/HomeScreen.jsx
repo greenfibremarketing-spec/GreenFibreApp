@@ -1,6 +1,5 @@
 // src/screens/HomeScreen.jsx
-// Green Fibre — Premium editorial home screen
-// Mockup reference: deep forest hero, serif headlines, botanical minimalism
+// Green Fibre — Editorial home screen with Loved by Our Community & Green Fibre Club
 
 import React, {
   useEffect,
@@ -19,19 +18,10 @@ import {
   Dimensions,
   StatusBar,
   RefreshControl,
-  Alert,
-  Linking,
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, {
-  FadeInDown,
-  FadeInUp,
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-} from "react-native-reanimated";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { useNavigation, DrawerActions } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -46,9 +36,13 @@ import { resolveImageUrl, PLACEHOLDER_IMAGE } from "../utils/catalogNormalize";
 
 const { width: screenWidth } = Dimensions.get("window");
 
-// ── Category style presets (icon, color, authentic eco-product photo/logo) ──
+// ── Category style presets ──
 const CATEGORY_STYLE_PRESETS = {
-  // Kitchen & Dining
+  "kitchen-and-dining": {
+    icon: "restaurant-outline",
+    color: "#D97706",
+    image: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=400&q=80",
+  },
   "kitchen-dining": {
     icon: "restaurant-outline",
     color: "#D97706",
@@ -69,8 +63,6 @@ const CATEGORY_STYLE_PRESETS = {
     color: "#D97706",
     image: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=400&q=80",
   },
-
-  // Drinkware
   drinkware: {
     icon: "water-outline",
     color: "#0284C7",
@@ -81,8 +73,11 @@ const CATEGORY_STYLE_PRESETS = {
     color: "#0284C7",
     image: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&q=80",
   },
-
-  // Home & Living
+  "home-and-living": {
+    icon: "home-outline",
+    color: "#166534",
+    image: "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=400&q=80",
+  },
   "home-living": {
     icon: "home-outline",
     color: "#166534",
@@ -98,25 +93,16 @@ const CATEGORY_STYLE_PRESETS = {
     color: "#4E342E",
     image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=400&q=80",
   },
-
-  // Storage & Baskets
+  "storage-and-baskets": {
+    icon: "file-tray-full-outline",
+    color: "#854D0E",
+    image: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=400&q=80",
+  },
   "storage-baskets": {
     icon: "file-tray-full-outline",
     color: "#854D0E",
-    image: "https://images.unsplash.com/photo-1595341888016-a392ef81b7de?w=400&q=80",
+    image: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=400&q=80",
   },
-  storage: {
-    icon: "cube-outline",
-    color: "#854D0E",
-    image: "https://images.unsplash.com/photo-1595341888016-a392ef81b7de?w=400&q=80",
-  },
-  baskets: {
-    icon: "basket-outline",
-    color: "#854D0E",
-    image: "https://images.unsplash.com/photo-1595341888016-a392ef81b7de?w=400&q=80",
-  },
-
-  // Pet Care
   "pet-care": {
     icon: "paw-outline",
     color: "#EA580C",
@@ -127,124 +113,121 @@ const CATEGORY_STYLE_PRESETS = {
     color: "#EA580C",
     image: "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=400&q=80",
   },
-
-  // Plants & Garden
+  accessories: {
+    icon: "bag-handle-outline",
+    color: "#7C3AED",
+    image: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=400&q=80",
+  },
+  apparel: {
+    icon: "shirt-outline",
+    color: "#059669",
+    image: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=400&q=80",
+  },
   plants: {
     icon: "leaf-outline",
     color: "#2E7D32",
     image: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=400&q=80",
   },
-  garden: {
-    icon: "flower-outline",
-    color: "#15803D",
-    image: "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=400&q=80",
-  },
-
-  // Gifts & Hampers
-  gifts: {
-    icon: "gift-outline",
-    color: "#BE123C",
-    image: "https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=400&q=80",
-  },
-  lifestyle: {
-    icon: "sparkles-outline",
-    color: "#7E22CE",
-    image: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=400&q=80",
-  },
-  stationery: {
-    icon: "book-outline",
-    color: "#0F766E",
-    image: "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=400&q=80",
-  },
-  bags: {
-    icon: "bag-handle-outline",
-    color: "#9A3412",
-    image: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=400&q=80",
-  },
-};
-
-const DEFAULT_CATEGORY_STYLE = {
-  icon: "leaf-outline",
-  color: colors.primary || "#1C4A2A",
-  image: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400&q=80",
 };
 
 const getCategoryPreset = (slug, name) => {
-  const s = (slug || "").toLowerCase().trim();
-  const n = (name || "").toLowerCase().trim();
-  if (CATEGORY_STYLE_PRESETS[s]) return CATEGORY_STYLE_PRESETS[s];
-  if (CATEGORY_STYLE_PRESETS[s.replace(/_/g, "-")]) return CATEGORY_STYLE_PRESETS[s.replace(/_/g, "-")];
-
-  if (s.includes("kitchen") || n.includes("kitchen") || n.includes("dining")) return CATEGORY_STYLE_PRESETS["kitchen-dining"];
-  if (s.includes("drink") || n.includes("drink") || s.includes("bottle") || n.includes("bottle")) return CATEGORY_STYLE_PRESETS["drinkware"];
-  if (s.includes("home") || n.includes("home") || s.includes("living") || n.includes("living")) return CATEGORY_STYLE_PRESETS["home-living"];
-  if (s.includes("storage") || n.includes("storage") || s.includes("basket") || n.includes("basket")) return CATEGORY_STYLE_PRESETS["storage-baskets"];
-  if (s.includes("pet") || n.includes("pet") || n.includes("dog") || n.includes("cat")) return CATEGORY_STYLE_PRESETS["pet-care"];
-  if (s.includes("plant") || n.includes("plant")) return CATEGORY_STYLE_PRESETS["plants"];
-  if (s.includes("gift") || n.includes("gift")) return CATEGORY_STYLE_PRESETS["gifts"];
-  if (s.includes("garden") || n.includes("garden")) return CATEGORY_STYLE_PRESETS["garden"];
-  if (s.includes("bag") || n.includes("bag")) return CATEGORY_STYLE_PRESETS["bags"];
-  if (s.includes("station") || n.includes("station")) return CATEGORY_STYLE_PRESETS["stationery"];
-
-  return DEFAULT_CATEGORY_STYLE;
+  const s = (slug || "").toLowerCase();
+  const n = (name || "").toLowerCase();
+  for (const [key, preset] of Object.entries(CATEGORY_STYLE_PRESETS)) {
+    if (s.includes(key) || n.includes(key) || key.includes(s)) return preset;
+  }
+  return {
+    icon: "grid-outline",
+    color: "#1C4A2A",
+    image: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400&q=80",
+  };
 };
 
-// ── Hero Banners ──────────────────────────────────────────────────────────
+// ── Hero Banners ──
 const megaBanners = [
   {
-    id: "1",
-    overline: "NEW COLLECTION",
-    title: "Crafted from\nraw bamboo",
-    subtitle: "Sustainable home essentials",
-    image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900&q=80",
-    gradient: ["rgba(18,46,26,0.82)", "rgba(18,46,26,0.1)"],
-    cta: "Explore Collection",
-    category: "home-decor",
+    id: "hero-1",
+    overline: "NEW SS26 COLLECTION",
+    title: "Rooted in\nNature",
+    subtitle: "Artisan-crafted kitchen & dining essentials for mindful living.",
+    cta: "Shop the Collection",
+    category: "kitchen-and-dining",
+    image:
+      "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1200&q=85",
+    gradient: ["rgba(18,46,26,0.85)", "rgba(18,46,26,0.3)", "transparent"],
   },
   {
-    id: "2",
-    overline: "BEST SELLER",
-    title: "Premium Eco\nGift Hampers",
-    subtitle: "Thoughtfully curated for every occasion",
-    image: "https://images.unsplash.com/photo-1512909006721-3d6018887383?w=900&q=80",
-    gradient: ["rgba(18,46,26,0.80)", "rgba(18,46,26,0.05)"],
-    cta: "Shop Hampers",
-    category: "gifts",
+    id: "hero-2",
+    overline: "CONSCIOUS LIVING",
+    title: "Handcrafted\nfor Home",
+    subtitle: "Sustainable homeware made from renewable jute, clay, and bamboo.",
+    cta: "Explore Home",
+    category: "home-and-living",
+    image:
+      "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=1200&q=85",
+    gradient: ["rgba(26,20,12,0.85)", "rgba(26,20,12,0.3)", "transparent"],
   },
   {
-    id: "3",
-    overline: "SUSTAINABILITY",
-    title: "Plantable &\nliving products",
-    subtitle: "Seed paper, bamboo & recycled goods",
-    image: "https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=900&q=80",
-    gradient: ["rgba(18,46,26,0.78)", "rgba(18,46,26,0.05)"],
+    id: "hero-3",
+    overline: "ZERO WASTE ESSENTIALS",
+    title: "Everyday\nImpact",
+    subtitle: "Every product supports certified organic growers and artisans.",
     cta: "Discover More",
-    category: "plants",
+    category: "all",
+    image:
+      "https://images.unsplash.com/photo-1544816155-12df9643f363?w=1200&q=85",
+    gradient: ["rgba(15,35,22,0.85)", "rgba(15,35,22,0.3)", "transparent"],
   },
 ];
 
-// ── Features strip ────────────────────────────────────────────────────────
+// ── Features Strip ──
 const features = [
-  { icon: "leaf-outline", label: "100% Sustainable" },
-  { icon: "car-outline", label: "Free Shipping" },
-  { icon: "ribbon-outline", label: "Premium Quality" },
-  { icon: "refresh-outline", label: "Easy Returns" },
+  { icon: "leaf-outline", label: "100% Organic Fibres" },
+  { icon: "infinite-outline", label: "Zero Plastic Packaging" },
+  { icon: "airplane-outline", label: "Carbon-Neutral Delivery" },
+  { icon: "shield-checkmark-outline", label: "Fair Trade Certified" },
 ];
 
-// ============================================================
-// 🏠 MAIN COMPONENT
-// ============================================================
-export default function HomeScreen() {
+// ── Customer Testimonials ──
+const testimonials = [
+  {
+    id: "t1",
+    name: "Aarav Sharma",
+    role: "Verified Buyer",
+    comment:
+      "The bamboo cotton shirts are extraordinarily soft and breathable. Truly premium craftsmanship with zero plastic packaging!",
+    rating: 5,
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80",
+  },
+  {
+    id: "t2",
+    name: "Pooja Patel",
+    role: "Eco Architect",
+    comment:
+      "Green Fibre is my go-to for eco-friendly decor and kitchenware. The quality and aesthetic minimalism are unmatched.",
+    rating: 5,
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80",
+  },
+  {
+    id: "t3",
+    name: "Rohan Verma",
+    role: "Conscious Shopper",
+    comment:
+      "Fast delivery, thoughtful compostable wrapping, and products that last. Love their environmental commitment.",
+    rating: 5,
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80",
+  },
+];
+
+export function HomeScreen() {
   const navigation = useNavigation();
   const dispatch = useAppDispatch();
-  const scrollViewRef = useRef(null);
   const insets = useSafeAreaInsets();
   const bannerRef = useRef(null);
+  const scrollViewRef = useRef(null);
 
-  const { products, loading, error: productsError } = useAppSelector(
-    (state) => state.products,
-  );
-  const apiCategories = useAppSelector((state) => state.categories.categories);
+  const { products, loading } = useAppSelector((s) => s.products);
+  const { categories: apiCategories } = useAppSelector((s) => s.categories);
 
   const [refreshing, setRefreshing] = useState(false);
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
@@ -266,23 +249,12 @@ export default function HomeScreen() {
     });
   }, [apiCategories]);
 
-  // Image helper
-  const getProductImage = useCallback((product) => {
-    if (!product) return PLACEHOLDER_IMAGE;
-    const raw =
-      product.image ||
-      product.images?.[0]?.url ||
-      product.images?.[0] ||
-      product.colors?.[0]?.images?.[0] ||
-      null;
-    return resolveImageUrl(raw) || PLACEHOLDER_IMAGE;
-  }, []);
-
   // Featured products — first 6
   const featuredProducts = useMemo(
     () => (products || []).slice(0, 6),
     [products],
   );
+
   // Best sellers — products with rating
   const bestSellers = useMemo(
     () =>
@@ -342,14 +314,14 @@ export default function HomeScreen() {
         contentFit="cover"
         transition={400}
       />
-      {/* Gradient scrim from bottom 70% → transparent at top */}
+      {/* Gradient scrim */}
       <LinearGradient
         colors={item.gradient}
         start={{ x: 0, y: 1 }}
         end={{ x: 0.3, y: 0 }}
         style={StyleSheet.absoluteFill}
       />
-      {/* Text overlay — left-aligned, bottom */}
+      {/* Text overlay */}
       <View style={styles.heroTextWrap}>
         <Text style={styles.heroOverline}>{item.overline}</Text>
         <Text style={styles.heroTitle}>{item.title}</Text>
@@ -362,7 +334,7 @@ export default function HomeScreen() {
     </TouchableOpacity>
   );
 
-  // ── Render Category Circle with Photo Logo & Matching Icon Badge ──
+  // ── Render Category Circle ──
   const renderCategoryItem = ({ item }) => (
     <TouchableOpacity
       style={styles.categoryItem}
@@ -388,7 +360,6 @@ export default function HomeScreen() {
             style={StyleSheet.absoluteFill}
           />
         </View>
-        {/* Floating Mini Category Emblem / Icon Badge */}
         <View style={[styles.categoryBadge, { backgroundColor: item.color }]}>
           <Ionicons name={item.icon} size={11} color="#FFFFFF" />
         </View>
@@ -399,38 +370,31 @@ export default function HomeScreen() {
     </TouchableOpacity>
   );
 
-  // ── Render Product Card in grid ──────────────────────────────
-  const renderProductCard = ({ item, index }) => (
-    <ProductCard
-      product={item}
-      index={index}
-      onPress={() => goToProductDetails(item)}
-    />
-  );
-
   return (
-    <ScreenContainer onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}>
+    <ScreenContainer
+      scroll={false}
+      onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+    >
       <StatusBar barStyle="light-content" backgroundColor={colors.primaryDark} />
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top"]}>
-        <ScrollView
-          ref={scrollViewRef}
-          showsVerticalScrollIndicator={false}
-          style={styles.container}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={[colors.primary]}
-              tintColor={colors.primary}
-            />
-          }
-        >
-          {/* ── HERO BANNER CAROUSEL ─────────────────────────── */}
-          <View style={styles.heroWrap}>
-            <FlatList
-              ref={bannerRef}
-              data={megaBanners}
+      <ScrollView
+        ref={scrollViewRef}
+        showsVerticalScrollIndicator={false}
+        style={styles.container}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
+      >
+        {/* ── 1. HERO BANNER CAROUSEL ───────────────────────── */}
+        <View style={styles.heroWrap}>
+          <FlatList
+            ref={bannerRef}
+            data={megaBanners}
               keyExtractor={(item) => item.id}
               renderItem={renderBannerItem}
               horizontal
@@ -440,9 +404,13 @@ export default function HomeScreen() {
                 const idx = Math.round(e.nativeEvent.contentOffset.x / screenWidth);
                 setCurrentBannerIndex(idx);
               }}
-              getItemLayout={(_, i) => ({ length: screenWidth, offset: screenWidth * i, index: i })}
+              getItemLayout={(_, i) => ({
+                length: screenWidth,
+                offset: screenWidth * i,
+                index: i,
+              })}
             />
-            {/* Dots — bottom LEFT */}
+            {/* Dots */}
             <View style={styles.bannerDots}>
               {megaBanners.map((_, i) => (
                 <View
@@ -456,7 +424,7 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* ── FEATURES STRIP ───────────────────────────────── */}
+          {/* ── 2. FEATURES STRIP ─────────────────────────────── */}
           <Animated.View entering={FadeInDown.delay(100).duration(400)} style={styles.featuresStrip}>
             {features.map((f, i) => (
               <View key={i} style={styles.featureItem}>
@@ -466,7 +434,7 @@ export default function HomeScreen() {
             ))}
           </Animated.View>
 
-          {/* ── CATEGORIES ───────────────────────────────────── */}
+          {/* ── 3. CATEGORIES ─────────────────────────────────── */}
           {categoryUiList.length > 0 && (
             <Animated.View entering={FadeInDown.delay(150).duration(400)}>
               <View style={styles.sectionHeader}>
@@ -483,7 +451,7 @@ export default function HomeScreen() {
             </Animated.View>
           )}
 
-          {/* ── BEST SELLERS GRID ────────────────────────────── */}
+          {/* ── 4. BEST SELLERS GRID ──────────────────────────── */}
           <Animated.View entering={FadeInDown.delay(200).duration(400)}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionOverline}>BEST SELLERS</Text>
@@ -510,10 +478,12 @@ export default function HomeScreen() {
             )}
           </Animated.View>
 
-          {/* ── EDITORIAL BANNER — Our Story ─────────────────── */}
+          {/* ── 5. EDITORIAL BANNER — Our Story ───────────────── */}
           <Animated.View entering={FadeInDown.delay(250).duration(400)} style={styles.editorialBanner}>
             <Image
-              source={{ uri: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80" }}
+              source={{
+                uri: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80",
+              }}
               style={styles.editorialImage}
               contentFit="cover"
             />
@@ -535,7 +505,7 @@ export default function HomeScreen() {
             </View>
           </Animated.View>
 
-          {/* ── NEW ARRIVALS ──────────────────────────────────── */}
+          {/* ── 6. NEW ARRIVALS ───────────────────────────────── */}
           {featuredProducts.length > 0 && (
             <Animated.View entering={FadeInDown.delay(300).duration(400)}>
               <View style={styles.sectionHeader}>
@@ -562,7 +532,7 @@ export default function HomeScreen() {
             </Animated.View>
           )}
 
-          {/* ── SUSTAINABILITY CALLOUT ────────────────────────── */}
+          {/* ── 7. SUSTAINABILITY CALLOUT ─────────────────────── */}
           <Animated.View entering={FadeInDown.delay(350).duration(400)} style={styles.sustainCallout}>
             <View style={styles.sustainIcon}>
               <Ionicons name="leaf" size={28} color={colors.primary} />
@@ -574,8 +544,60 @@ export default function HomeScreen() {
               </Text>
             </View>
           </Animated.View>
+
+          {/* ── 8. LOVED BY OUR COMMUNITY (Testimonials) ──────── */}
+          <Animated.View entering={FadeInDown.delay(400).duration(400)} style={styles.sectionWrap}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionOverline}>LOVED BY OUR COMMUNITY</Text>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.testimonialsList}
+            >
+              {testimonials.map((t) => (
+                <View key={t.id} style={styles.testimonialCard}>
+                  <View style={styles.testimonialStars}>
+                    {[...Array(t.rating)].map((_, i) => (
+                      <Ionicons key={i} name="star" size={14} color="#FFD700" />
+                    ))}
+                  </View>
+                  <Text style={styles.testimonialComment} numberOfLines={4}>
+                    "{t.comment}"
+                  </Text>
+                  <View style={styles.testimonialAuthorRow}>
+                    <Image source={{ uri: t.avatar }} style={styles.testimonialAvatar} />
+                    <View>
+                      <Text style={styles.testimonialName}>{t.name}</Text>
+                      <Text style={styles.testimonialRole}>{t.role}</Text>
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          </Animated.View>
+
+          {/* ── 9. JOIN THE GREEN FIBRE CLUB ─────────────────── */}
+          <Animated.View entering={FadeInDown.delay(450).duration(400)} style={styles.vipBannerWrap}>
+            <LinearGradient
+              colors={["#1B5E20", "#122E1A"]}
+              style={styles.vipBanner}
+            >
+              <Ionicons name="leaf" size={30} color="#81C784" style={{ marginBottom: 8 }} />
+              <Text style={styles.vipTitle}>Join the Green Fibre Club</Text>
+              <Text style={styles.vipSubtitle}>
+                Get early access to conscious drops, tree planting certificates, and member-only rewards.
+              </Text>
+              <TouchableOpacity
+                style={styles.vipBtn}
+                onPress={() => navigation.navigate("Register")}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.vipBtnText}>Create Free Account</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </Animated.View>
         </ScrollView>
-      </SafeAreaView>
     </ScreenContainer>
   );
 }
@@ -644,7 +666,6 @@ const styles = StyleSheet.create({
     color: colors.cream,
     letterSpacing: 0.3,
   },
-  // Banner dots — bottom left
   bannerDots: {
     position: "absolute",
     bottom: 14,
@@ -687,6 +708,9 @@ const styles = StyleSheet.create({
   },
 
   // ── Section headers ───────────────────────────────────────────
+  sectionWrap: {
+    marginTop: 8,
+  },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -867,4 +891,98 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: colors.textSecondary,
   },
+
+  // ── Testimonials ─────────────────────────────────────────────
+  testimonialsList: {
+    paddingHorizontal: spacing.screen,
+    gap: 14,
+    paddingBottom: 4,
+  },
+  testimonialCard: {
+    width: 270,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+    justifyContent: "space-between",
+  },
+  testimonialStars: {
+    flexDirection: "row",
+    gap: 3,
+    marginBottom: 10,
+  },
+  testimonialComment: {
+    fontFamily: "DMSans_400Regular",
+    fontSize: 13,
+    lineHeight: 19,
+    color: colors.text,
+    marginBottom: 14,
+  },
+  testimonialAuthorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  testimonialAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  testimonialName: {
+    fontFamily: "DMSans_600SemiBold",
+    fontSize: 13,
+    color: colors.text,
+  },
+  testimonialRole: {
+    fontFamily: "DMSans_400Regular",
+    fontSize: 11,
+    color: colors.textSecondary,
+  },
+
+  // ── VIP Club Banner ──────────────────────────────────────────
+  vipBannerWrap: {
+    paddingHorizontal: spacing.screen,
+    marginTop: 28,
+  },
+  vipBanner: {
+    borderRadius: 20,
+    padding: 24,
+    alignItems: "center",
+    textAlign: "center",
+  },
+  vipTitle: {
+    fontFamily: "PlayfairDisplay_700Bold",
+    fontSize: 22,
+    color: "#FFFFFF",
+    textAlign: "center",
+    marginBottom: 6,
+  },
+  vipSubtitle: {
+    fontFamily: "DMSans_400Regular",
+    fontSize: 13,
+    lineHeight: 19,
+    color: "rgba(255,255,255,0.85)",
+    textAlign: "center",
+    marginBottom: 16,
+    paddingHorizontal: 8,
+  },
+  vipBtn: {
+    backgroundColor: colors.cream,
+    paddingHorizontal: 22,
+    paddingVertical: 11,
+    borderRadius: 22,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  vipBtnText: {
+    fontFamily: "DMSans_700Bold",
+    fontSize: 13,
+    color: colors.primaryDark,
+  },
 });
+
+export default HomeScreen;

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Linking,
+  Alert,
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,6 +25,7 @@ import {
   selectOrdersError,
 } from "../store/slices/ordersSlice";
 import { resolveImageUrl } from "../utils/catalogNormalize";
+import { razorpayService } from "../api/services/razorpayService";
 
 const fnpColors = {
   primary: "#2E7D32",
@@ -58,6 +60,7 @@ export function TrackOrderScreen({ route }) {
   const orders = useAppSelector(selectOrders);
   const loading = useAppSelector(selectOrdersLoading);
   const error = useAppSelector(selectOrdersError);
+  const [retrying, setRetrying] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -193,27 +196,133 @@ export function TrackOrderScreen({ route }) {
   const shipping = displayOrder.shippingDetails || {};
   const history = displayOrder.statusHistory || [];
 
+  const isPendingPayment =
+    (displayOrder.paymentStatus || "").toLowerCase() === "pending" &&
+    (displayOrder.paymentMethod || "").toLowerCase() !== "cod";
+
+  const handleRetryPayment = async () => {
+    try {
+      setRetrying(true);
+      const amountInPaise = Math.round(
+        Number(displayOrder.finalAmount ?? displayOrder.totalAmount ?? 0) * 100
+      );
+
+      const result = await razorpayService.createOrder({
+        amount: amountInPaise,
+        currency: "INR",
+        orderId: displayOrder._id || displayOrder.id,
+        shippingAddress: displayOrder.shippingAddress,
+        notes: {
+          orderId: displayOrder._id || displayOrder.id,
+          customerName: displayOrder.shippingAddress?.fullName || "",
+          customerPhone: displayOrder.shippingAddress?.phone || "",
+          customerEmail: displayOrder.shippingAddress?.email || "",
+        },
+      });
+
+      if (result?.order_id) {
+        navigation.navigate("RazorpayPayment", {
+          razorpayOrderId: result.order_id,
+          amount: result.amount,
+          currency: result.currency,
+          keyId: result.key_id,
+          orderId: displayOrder._id || displayOrder.id,
+          customerInfo: {
+            name: displayOrder.shippingAddress?.fullName || "",
+            email: displayOrder.shippingAddress?.email || "",
+            phone: displayOrder.shippingAddress?.phone || "",
+          },
+          notes: {
+            orderId: displayOrder._id || displayOrder.id,
+          },
+        });
+      } else {
+        Alert.alert("Payment", "Unable to start payment session. Please try again.");
+      }
+    } catch (err) {
+      Alert.alert("Payment Error", err.message || "Failed to initialize payment.");
+    } finally {
+      setRetrying(false);
+    }
+  };
+
   return (
     <ScreenContainer
       onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
-      headerTitle="Track Order"
+      headerTitle={isPendingPayment ? "Order Status" : "Track Order"}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.card}>
-          <View style={styles.statusHeader}>
-            <View style={styles.statusIconWrap}>
-              <Ionicons name="cube-outline" size={28} color={fnpColors.primary} />
+          {/* Status Header */}
+          <View
+            style={[
+              styles.statusHeader,
+              isPendingPayment && styles.statusHeaderPending,
+            ]}
+          >
+            <View
+              style={[
+                styles.statusIconWrap,
+                isPendingPayment && styles.statusIconWrapPending,
+              ]}
+            >
+              <Ionicons
+                name={isPendingPayment ? "alert-circle" : "cube-outline"}
+                size={28}
+                color={isPendingPayment ? "#D97706" : fnpColors.primary}
+              />
             </View>
             <View style={styles.statusInfo}>
-              <Text style={styles.statusLabel}>{formatStatusLabel(currentStatus)}</Text>
+              <Text
+                style={[
+                  styles.statusLabel,
+                  isPendingPayment && styles.statusLabelPending,
+                ]}
+              >
+                {isPendingPayment
+                  ? "Payment Pending"
+                  : formatStatusLabel(currentStatus)}
+              </Text>
               <Text style={styles.orderNumber}>
                 {displayOrder.easebuzzOrderId || displayOrder._id}
               </Text>
               <Text style={styles.paymentMeta}>
-                Payment: {displayOrder.paymentStatus || "pending"}
+                Payment:{" "}
+                {isPendingPayment
+                  ? "Incomplete (Awaiting Payment)"
+                  : displayOrder.paymentStatus || "Paid"}
               </Text>
             </View>
           </View>
+
+          {/* Pending Payment Action Banner */}
+          {isPendingPayment && (
+            <View style={styles.pendingActionBox}>
+              <View style={styles.pendingAlertRow}>
+                <Ionicons name="information-circle" size={18} color="#D97706" />
+                <Text style={styles.pendingNoticeText}>
+                  Your payment has not been completed. Pay now to confirm your order and begin dispatch.
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.retryPayBigBtn}
+                onPress={handleRetryPayment}
+                activeOpacity={0.88}
+                disabled={retrying}
+              >
+                {retrying ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <>
+                    <Ionicons name="card-outline" size={18} color="#FFFFFF" />
+                    <Text style={styles.retryPayBigBtnText}>
+                      Pay {formatPrice(displayOrder.finalAmount ?? displayOrder.totalAmount ?? 0)} Now
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
 
           <View style={styles.infoGrid}>
             <View style={styles.infoCard}>
@@ -235,8 +344,15 @@ export function TrackOrderScreen({ route }) {
               <Text style={styles.infoValue}>{displayOrder.items?.length || 0}</Text>
             </View>
             <View style={styles.infoCard}>
-              <Text style={styles.infoLabel}>Courier</Text>
-              <Text style={styles.infoValue}>{shipping.courierName || "N/A"}</Text>
+              <Text style={styles.infoLabel}>Payment</Text>
+              <Text
+                style={[
+                  styles.infoValue,
+                  isPendingPayment && { color: "#D97706", fontWeight: "700" },
+                ]}
+              >
+                {isPendingPayment ? "Pending" : displayOrder.paymentMethod?.toUpperCase() || "PAID"}
+              </Text>
             </View>
           </View>
 
@@ -255,31 +371,62 @@ export function TrackOrderScreen({ route }) {
             </View>
           ) : null}
 
-          <Text style={styles.sectionTitle}>Delivery Timeline</Text>
+          <Text style={styles.sectionTitle}>
+            {isPendingPayment ? "Order Status Progress" : "Delivery Timeline"}
+          </Text>
           <View style={styles.timeline}>
-            {STATUS_STEPS.map((step, index) => {
-              const isCompleted = index <= currentStep && currentStatus !== "cancelled";
-              const isActive = index === currentStep && currentStatus !== "cancelled";
-              return (
-                <View key={step} style={styles.timelineRow}>
-                  <View
-                    style={[
-                      styles.timelineDot,
-                      isCompleted && styles.timelineDotCompleted,
-                      isActive && styles.timelineDotActive,
-                    ]}
-                  />
-                  <Text
-                    style={[
-                      styles.timelineText,
-                      isCompleted && styles.timelineTextCompleted,
-                    ]}
-                  >
-                    {formatStatusLabel(step)}
+            {isPendingPayment ? (
+              <>
+                <View style={styles.timelineRow}>
+                  <View style={[styles.timelineDot, styles.timelineDotCompleted]} />
+                  <Text style={[styles.timelineText, styles.timelineTextCompleted]}>
+                    Order Created
                   </Text>
                 </View>
-              );
-            })}
+                <View style={styles.timelineRow}>
+                  <View style={[styles.timelineDot, styles.timelineDotPendingActive]} />
+                  <Text style={[styles.timelineText, styles.timelineTextPendingActive]}>
+                    Payment Pending (Action Required)
+                  </Text>
+                </View>
+                <View style={styles.timelineRow}>
+                  <View style={styles.timelineDot} />
+                  <Text style={styles.timelineText}>
+                    Eco Packaging & Processing (Awaiting Payment)
+                  </Text>
+                </View>
+                <View style={styles.timelineRow}>
+                  <View style={styles.timelineDot} />
+                  <Text style={styles.timelineText}>
+                    Dispatched & Delivered
+                  </Text>
+                </View>
+              </>
+            ) : (
+              STATUS_STEPS.map((step, index) => {
+                const isCompleted = index <= currentStep && currentStatus !== "cancelled";
+                const isActive = index === currentStep && currentStatus !== "cancelled";
+                return (
+                  <View key={step} style={styles.timelineRow}>
+                    <View
+                      style={[
+                        styles.timelineDot,
+                        isCompleted && styles.timelineDotCompleted,
+                        isActive && styles.timelineDotActive,
+                      ]}
+                    />
+                    <Text
+                      style={[
+                        styles.timelineText,
+                        isCompleted && styles.timelineTextCompleted,
+                      ]}
+                    >
+                      {formatStatusLabel(step)}
+                    </Text>
+                  </View>
+                );
+              })
+            )}
           </View>
 
           {history.length > 0 ? (
@@ -433,6 +580,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
+  statusHeaderPending: {
+    backgroundColor: "#FFFBEB",
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#FDE68A",
+  },
   statusIconWrap: {
     width: 56,
     height: 56,
@@ -442,6 +596,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 12,
   },
+  statusIconWrapPending: {
+    backgroundColor: "#FEF3C7",
+  },
   statusInfo: {
     flex: 1,
   },
@@ -449,6 +606,58 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: fnpColors.text,
+  },
+  statusLabelPending: {
+    color: "#D97706",
+  },
+  pendingActionBox: {
+    backgroundColor: "#FEF3C7",
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#FCD34D",
+  },
+  pendingAlertRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    marginBottom: 12,
+  },
+  pendingNoticeText: {
+    flex: 1,
+    fontSize: 13,
+    color: "#92400E",
+    lineHeight: 18,
+    fontWeight: "500",
+  },
+  retryPayBigBtn: {
+    backgroundColor: "#D97706",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    shadowColor: "#D97706",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  retryPayBigBtnText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  timelineDotPendingActive: {
+    backgroundColor: "#D97706",
+    transform: [{ scale: 1.25 }],
+  },
+  timelineTextPendingActive: {
+    color: "#D97706",
+    fontWeight: "700",
   },
   orderNumber: {
     fontSize: 13,

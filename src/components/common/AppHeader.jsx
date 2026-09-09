@@ -31,6 +31,7 @@ export function AppHeader({
   showMenu = true,
   title,
   onMenuPress,
+  headerRight,
   style,
   showSearch = true,
 }) {
@@ -157,32 +158,38 @@ export function AppHeader({
 
         {/* Right icons */}
         <View style={styles.rightIcons}>
-          {/* Search icon — opens inline bar */}
-          {showSearch && !searchOpen && (
-            <TouchableOpacity
-              style={styles.iconBtn}
-              onPress={openSearch}
-              accessibilityLabel="Search products"
-            >
-              <Ionicons name="search-outline" size={20} color={colors.text} />
-            </TouchableOpacity>
-          )}
+          {headerRight !== undefined ? (
+            headerRight
+          ) : (
+            <>
+              {/* Search icon — opens inline bar */}
+              {showSearch && !searchOpen && (
+                <TouchableOpacity
+                  style={styles.iconBtn}
+                  onPress={openSearch}
+                  accessibilityLabel="Search products"
+                >
+                  <Ionicons name="search-outline" size={20} color={colors.text} />
+                </TouchableOpacity>
+              )}
 
-          {/* Cart — terracotta badge */}
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={() => navigation.navigate("Cart")}
-            accessibilityLabel="Open cart"
-          >
-            <Ionicons name="bag-outline" size={20} color={colors.text} />
-            {cartCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>
-                  {cartCount > 9 ? "9+" : cartCount}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
+              {/* Cart — terracotta badge */}
+              <TouchableOpacity
+                style={styles.iconBtn}
+                onPress={() => navigation.navigate("Cart")}
+                accessibilityLabel="Open cart"
+              >
+                <Ionicons name="bag-outline" size={20} color={colors.text} />
+                {cartCount > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>
+                      {cartCount > 9 ? "9+" : cartCount}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </View>
     </View>

@@ -1,5 +1,5 @@
-// ✅ No Redux/API changes - all functionality remains identical
-import React, { useEffect, useRef, useState } from "react";
+// src/screens/MyOrdersScreen.jsx
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -22,14 +22,12 @@ import { formatPrice } from "../utils/helpers";
 import { resolveImageUrl, PLACEHOLDER_IMAGE } from "../utils/catalogNormalize";
 import { colors, spacing, typography, shadows } from "../theme";
 import { ScreenContainer } from "../components/common/ScreenContainer";
-import { EmptyState } from "../components/common/EmptyState";
-import { Button } from "../components/common/Button";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { fetchOrders } from "../store/thunks/orderThunks";
 
 const { width } = Dimensions.get("window");
 
-// FNP-Inspired Color Palette
+// FNP-Inspired Brand Colors
 const FNP_COLORS = {
   primary: "#2E7D32",
   primaryLight: "#E8F5E9",
@@ -43,15 +41,28 @@ const FNP_COLORS = {
   border: "#F0F0F0",
   shadow: "rgba(0,0,0,0.08)",
   success: "#4CAF50",
-  warning: "#FF9800",
+  warning: "#D97706",
+  warningLight: "#FFFBEB",
   danger: "#F44336",
   info: "#2196F3",
 };
 
 // FNP-Style Status Badge Component
-const StatusBadge = ({ status }) => {
+const StatusBadge = ({ orderStatus, paymentStatus, paymentMethod }) => {
+  const isPendingPayment =
+    paymentStatus === "pending" && (paymentMethod || "").toLowerCase() !== "cod";
+
   const getStatusConfig = () => {
-    switch (status?.toLowerCase()) {
+    if (isPendingPayment || paymentStatus === "failed") {
+      return {
+        icon: "alert-circle-outline",
+        color: "#D97706",
+        bgColor: "#FFFBEB",
+        label: "Payment Pending",
+      };
+    }
+
+    switch (orderStatus?.toLowerCase()) {
       case "placed":
         return {
           icon: "time-outline",
@@ -62,7 +73,7 @@ const StatusBadge = ({ status }) => {
       case "confirmed":
       case "processing":
         return {
-          icon: "time-outline",
+          icon: "sync-outline",
           color: "#F57F17",
           bgColor: "#FFF8E1",
           label: "Processing",
@@ -93,7 +104,7 @@ const StatusBadge = ({ status }) => {
           icon: "time-outline",
           color: "#F57F17",
           bgColor: "#FFF8E1",
-          label: status?.replace(/_/g, " ") || "Pending",
+          label: orderStatus?.replace(/_/g, " ") || "Pending",
         };
     }
   };
@@ -102,7 +113,7 @@ const StatusBadge = ({ status }) => {
 
   return (
     <View style={[styles.statusBadge, { backgroundColor: config.bgColor }]}>
-      <Ionicons name={config.icon} size={14} color={config.color} />
+      <Ionicons name={config.icon} size={13} color={config.color} />
       <Text style={[styles.statusText, { color: config.color }]}>
         {config.label}
       </Text>
@@ -110,22 +121,22 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-// FNP-Style Order Card Component
-const OrderCard = ({ order, onPress }) => {
+// Order Card Component with Tab Context
+const OrderCard = ({ order, onPress, tabKey }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 400,
+      duration: 350,
       useNativeDriver: true,
     }).start();
   }, []);
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
-      toValue: 0.97,
+      toValue: 0.98,
       friction: 5,
       tension: 50,
       useNativeDriver: true,
@@ -146,12 +157,16 @@ const OrderCard = ({ order, onPress }) => {
     onPress(order._id || order.id);
   };
 
-  const orderNumber = order.easebuzzOrderId || order.orderNumber || order._id || "ORD-0000";
+  const orderNumber =
+    order.easebuzzOrderId || order.orderNumber || order._id || "ORD-0000";
   const orderDate = order.createdAt || new Date().toISOString();
   const orderItems = order.items || [];
   const orderTotal = order.finalAmount ?? order.total ?? order.totalAmount ?? 0;
-  const orderStatus = order.orderStatus || order.status || "placed";
-  const paymentStatus = order.paymentStatus || "pending";
+  const orderStatus = (order.orderStatus || order.status || "placed").toLowerCase();
+  const paymentStatus = (order.paymentStatus || "pending").toLowerCase();
+  const paymentMethod = order.paymentMethod || "Easebuzz";
+  const isPendingPayment =
+    paymentStatus === "pending" && (paymentMethod || "").toLowerCase() !== "cod";
 
   return (
     <Animated.View
@@ -164,35 +179,53 @@ const OrderCard = ({ order, onPress }) => {
       ]}
     >
       <TouchableOpacity
-        style={styles.orderCard}
+        style={[
+          styles.orderCard,
+          isPendingPayment && styles.orderCardPending,
+        ]}
         activeOpacity={0.88}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         onPress={handlePress}
       >
-        {/* FNP-Style Card Header */}
+        {/* Card Header */}
         <View style={styles.orderHeader}>
           <View style={styles.orderNumberWrap}>
-            <View style={styles.orderIconWrap}>
+            <View
+              style={[
+                styles.orderIconWrap,
+                isPendingPayment && { backgroundColor: "#FEF3C7" },
+              ]}
+            >
               <Ionicons
-                name="receipt-outline"
+                name={isPendingPayment ? "wallet-outline" : "receipt-outline"}
                 size={16}
-                color={FNP_COLORS.primary}
+                color={isPendingPayment ? "#D97706" : FNP_COLORS.primary}
               />
             </View>
             <Text style={styles.orderNumber}>{orderNumber}</Text>
           </View>
-          <StatusBadge status={orderStatus} />
+          <StatusBadge
+            orderStatus={orderStatus}
+            paymentStatus={paymentStatus}
+            paymentMethod={paymentMethod}
+          />
         </View>
 
-        {paymentStatus === "pending" && (
-          <Text style={styles.paymentPendingText}>Payment pending</Text>
+        {/* Pending Payment Alert Banner */}
+        {isPendingPayment && (
+          <View style={styles.pendingAlertBox}>
+            <Ionicons name="information-circle" size={15} color="#D97706" />
+            <Text style={styles.pendingAlertText}>
+              Payment was not completed. Tap to view or complete payment.
+            </Text>
+          </View>
         )}
 
-        {/* FNP-Style Date & Items Count */}
+        {/* Date & Items Count */}
         <View style={styles.orderMeta}>
           <View style={styles.metaItem}>
-            <Ionicons name="calendar-outline" size={14} color="#999" />
+            <Ionicons name="calendar-outline" size={13} color="#999" />
             <Text style={styles.orderDate}>
               {new Date(orderDate).toLocaleDateString("en-IN", {
                 day: "numeric",
@@ -202,23 +235,27 @@ const OrderCard = ({ order, onPress }) => {
             </Text>
           </View>
           <View style={styles.metaItem}>
-            <Ionicons name="cube-outline" size={14} color="#999" />
+            <Ionicons name="cube-outline" size={13} color="#999" />
             <Text style={styles.orderItemsCount}>
               {orderItems.length} item{orderItems.length > 1 ? "s" : ""}
             </Text>
           </View>
+          <View style={styles.metaItem}>
+            <Ionicons name="card-outline" size={13} color="#999" />
+            <Text style={styles.orderDate}>
+              {paymentMethod.toUpperCase()}
+            </Text>
+          </View>
         </View>
 
-        {/* FNP-Style Order Items Preview */}
+        {/* Order Items Preview */}
         {orderItems.length > 0 && (
           <View style={styles.orderItems}>
             {orderItems.slice(0, 3).map((item, index) => (
               <View key={item.productId || index} style={styles.itemWrap}>
                 <Image
                   source={{
-                    uri:
-                      resolveImageUrl(item.image) ||
-                      PLACEHOLDER_IMAGE,
+                    uri: resolveImageUrl(item.image) || PLACEHOLDER_IMAGE,
                   }}
                   style={styles.itemThumb}
                   contentFit="cover"
@@ -235,106 +272,137 @@ const OrderCard = ({ order, onPress }) => {
           </View>
         )}
 
-        {/* FNP-Style Card Footer */}
+        {/* Card Footer */}
         <View style={styles.orderFooter}>
           <View style={styles.totalWrap}>
             <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.orderTotal}>{formatPrice(orderTotal)}</Text>
+            <Text
+              style={[
+                styles.orderTotal,
+                isPendingPayment && { color: "#D97706" },
+              ]}
+            >
+              {formatPrice(orderTotal)}
+            </Text>
           </View>
-          <View style={styles.trackLink}>
-            <Text style={styles.trackText}>Track Order</Text>
-            <Ionicons
-              name="arrow-forward"
-              size={16}
-              color={FNP_COLORS.primary}
-            />
-          </View>
+          {isPendingPayment ? (
+            <TouchableOpacity
+              style={styles.payNowBadgeBtn}
+              onPress={handlePress}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="card-outline" size={14} color="#FFFFFF" />
+              <Text style={styles.payNowBadgeBtnText}>Pay Now</Text>
+              <Ionicons name="arrow-forward" size={13} color="#FFFFFF" />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.trackLink}>
+              <Text style={styles.trackText}>
+                {orderStatus === "delivered" ? "View Receipt" : "Track Order"}
+              </Text>
+              <Ionicons
+                name="arrow-forward"
+                size={15}
+                color={FNP_COLORS.primary}
+              />
+            </View>
+          )}
         </View>
 
-        {/* FNP-Style Progress Indicator */}
-        {orderStatus !== "delivered" && orderStatus !== "cancelled" && (
-          <View style={styles.progressBar}>
-            <View
-              style={[
-                styles.progressFill,
-                {
-                  width:
-                    orderStatus === "confirmed" || orderStatus === "processing"
-                      ? "33%"
-                      : orderStatus === "shipped"
+        {/* Progress Indicator for Active Orders */}
+        {!isPendingPayment &&
+          orderStatus !== "delivered" &&
+          orderStatus !== "cancelled" && (
+            <View style={styles.progressBar}>
+              <View
+                style={[
+                  styles.progressFill,
+                  {
+                    width:
+                      orderStatus === "confirmed" || orderStatus === "processing"
+                        ? "33%"
+                        : orderStatus === "shipped"
                         ? "66%"
                         : "100%",
-                },
-              ]}
-            />
-          </View>
-        )}
+                  },
+                ]}
+              />
+            </View>
+          )}
       </TouchableOpacity>
     </Animated.View>
   );
 };
 
-// FNP-Style Empty State Component
-const EmptyOrdersState = ({ navigation }) => {
+// Tab Empty State Component
+const TabEmptyState = ({ tabKey, navigation }) => {
+  const getEmptyConfig = () => {
+    switch (tabKey) {
+      case "active":
+        return {
+          icon: "cube-outline",
+          title: "No Active Orders",
+          message: "You don't have any orders in transit or processing right now.",
+          showShopBtn: true,
+          color: FNP_COLORS.primary,
+          bgColors: ["#E8F5E9", "#C8E6C9"],
+        };
+      case "history":
+        return {
+          icon: "receipt-outline",
+          title: "No Order History",
+          message: "Past delivered orders will appear here once completed.",
+          showShopBtn: true,
+          color: FNP_COLORS.primary,
+          bgColors: ["#E8F5E9", "#C8E6C9"],
+        };
+      case "pending":
+        return {
+          icon: "shield-checkmark-outline",
+          title: "No Pending Payments",
+          message: "All your orders are confirmed and up to date! ✨",
+          showShopBtn: false,
+          color: "#D97706",
+          bgColors: ["#FFFBEB", "#FEF3C7"],
+        };
+      default:
+        return {
+          icon: "receipt-outline",
+          title: "No Orders Found",
+          message: "Start shopping our conscious collection.",
+          showShopBtn: true,
+          color: FNP_COLORS.primary,
+          bgColors: ["#E8F5E9", "#C8E6C9"],
+        };
+    }
+  };
+
+  const config = getEmptyConfig();
+
   return (
     <View style={styles.emptyContainer}>
       <View style={styles.emptyIconWrap}>
-        <LinearGradient
-          colors={["#E8F5E9", "#C8E6C9"]}
-          style={styles.emptyGradient}
-        >
-          <Ionicons
-            name="receipt-outline"
-            size={60}
-            color={FNP_COLORS.primary}
-          />
+        <LinearGradient colors={config.bgColors} style={styles.emptyGradient}>
+          <Ionicons name={config.icon} size={54} color={config.color} />
         </LinearGradient>
       </View>
-      <Text style={styles.emptyTitle}>No Orders Yet</Text>
-      <Text style={styles.emptyMessage}>
-        You haven't placed any orders yet. Start shopping sustainably!
-      </Text>
-      <TouchableOpacity
-        style={styles.emptyBtn}
-        onPress={() => navigation.navigate("Tabs", { screen: "Shop" })}
-        activeOpacity={0.8}
-      >
-        <LinearGradient
-          colors={[FNP_COLORS.primary, FNP_COLORS.primaryDark]}
-          style={styles.emptyBtnGradient}
+      <Text style={styles.emptyTitle}>{config.title}</Text>
+      <Text style={styles.emptyMessage}>{config.message}</Text>
+      {config.showShopBtn && (
+        <TouchableOpacity
+          style={styles.emptyBtn}
+          onPress={() => navigation.navigate("Tabs", { screen: "Shop" })}
+          activeOpacity={0.85}
         >
-          <Ionicons name="leaf-outline" size={20} color="#FFFFFF" />
-          <Text style={styles.emptyBtnText}>Start Shopping</Text>
-        </LinearGradient>
-      </TouchableOpacity>
-    </View>
-  );
-};
-
-// Authenticated order tracking info
-const TrackSection = ({ navigation }) => {
-  return (
-    <View style={styles.trackSection}>
-      <LinearGradient
-        colors={["#F5F5F5", "#FFFFFF"]}
-        style={styles.trackGradient}
-      >
-        <View style={styles.trackContent}>
-          <View style={styles.trackIconWrap}>
-            <Ionicons
-              name="receipt-outline"
-              size={24}
-              color={FNP_COLORS.primary}
-            />
-          </View>
-          <View style={styles.trackTextWrap}>
-            <Text style={styles.trackTitle}>Track Your Orders</Text>
-            <Text style={styles.trackSubtext}>
-              Tap any order above to view delivery status and tracking details
-            </Text>
-          </View>
-        </View>
-      </LinearGradient>
+          <LinearGradient
+            colors={[FNP_COLORS.primary, FNP_COLORS.primaryDark]}
+            style={styles.emptyBtnGradient}
+          >
+            <Ionicons name="leaf-outline" size={18} color="#FFFFFF" />
+            <Text style={styles.emptyBtnText}>Explore Shop</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -342,8 +410,9 @@ const TrackSection = ({ navigation }) => {
 export function MyOrdersScreen() {
   const navigation = useNavigation();
   const dispatch = useAppDispatch();
-  const { orders, loading, pagination } = useAppSelector((s) => s.orders);
+  const { orders, loading } = useAppSelector((s) => s.orders);
   const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
+  const [activeTab, setActiveTab] = useState("active");
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
@@ -352,22 +421,90 @@ export function MyOrdersScreen() {
     }
   }, [dispatch, isAuthenticated]);
 
-  const handleOrderPress = (orderId) => {
-    navigation.navigate("TrackOrder", { orderId });
-  };
-
   const onRefresh = async () => {
     setRefreshing(true);
     await dispatch(fetchOrders());
     setRefreshing(false);
   };
 
-  // FNP-Style Loading Screen
-  if (loading) {
+  const handleOrderPress = (orderId) => {
+    navigation.navigate("TrackOrder", { orderId });
+  };
+
+  // ── 1. ACTIVE ORDERS (Paid or COD, In Transit / Processing) ──
+  const activeOrders = useMemo(() => {
+    return (orders || []).filter((o) => {
+      const orderStatus = (o.orderStatus || o.status || "").toLowerCase();
+      const paymentStatus = (o.paymentStatus || "").toLowerCase();
+      const paymentMethod = (o.paymentMethod || "").toLowerCase();
+
+      const isPendingPayment =
+        paymentStatus === "pending" && paymentMethod !== "cod";
+      if (
+        isPendingPayment ||
+        paymentStatus === "failed" ||
+        orderStatus === "cancelled"
+      ) {
+        return false;
+      }
+      return orderStatus !== "delivered";
+    });
+  }, [orders]);
+
+  // ── 2. HISTORY / DELIVERED ORDERS ──
+  const historyOrders = useMemo(() => {
+    return (orders || []).filter((o) => {
+      const orderStatus = (o.orderStatus || o.status || "").toLowerCase();
+      const paymentStatus = (o.paymentStatus || "").toLowerCase();
+      const paymentMethod = (o.paymentMethod || "").toLowerCase();
+
+      const isPendingPayment =
+        paymentStatus === "pending" && paymentMethod !== "cod";
+      if (isPendingPayment || paymentStatus === "failed") {
+        return false;
+      }
+      return orderStatus === "delivered";
+    });
+  }, [orders]);
+
+  // ── 3. PENDING PAYMENT ORDERS (Unfinished online checkouts / failed) ──
+  const pendingOrders = useMemo(() => {
+    return (orders || []).filter((o) => {
+      const orderStatus = (o.orderStatus || o.status || "").toLowerCase();
+      const paymentStatus = (o.paymentStatus || "").toLowerCase();
+      const paymentMethod = (o.paymentMethod || "").toLowerCase();
+
+      const isPendingPayment =
+        paymentStatus === "pending" && paymentMethod !== "cod";
+      return (
+        isPendingPayment ||
+        paymentStatus === "failed" ||
+        orderStatus === "cancelled"
+      );
+    });
+  }, [orders]);
+
+  // Get current tab list
+  const currentList = useMemo(() => {
+    switch (activeTab) {
+      case "active":
+        return activeOrders;
+      case "history":
+        return historyOrders;
+      case "pending":
+        return pendingOrders;
+      default:
+        return activeOrders;
+    }
+  }, [activeTab, activeOrders, historyOrders, pendingOrders]);
+
+  // Loading Screen
+  if (loading && (!orders || orders.length === 0)) {
     return (
       <ScreenContainer
         onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         headerTitle="My Orders"
+        scroll={false}
       >
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
         <View style={styles.loadingWrap}>
@@ -375,7 +512,7 @@ export function MyOrdersScreen() {
             <ActivityIndicator size="large" color={FNP_COLORS.primary} />
             <Text style={styles.loadingText}>Loading your orders...</Text>
             <Text style={styles.loadingSubtext}>
-              Please wait while we fetch your order history
+              Fetching your orders and delivery statuses
             </Text>
           </View>
         </View>
@@ -383,12 +520,13 @@ export function MyOrdersScreen() {
     );
   }
 
-  // FNP-Style Not Authenticated
+  // Not Authenticated
   if (!isAuthenticated) {
     return (
       <ScreenContainer
         onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
         headerTitle="My Orders"
+        scroll={false}
       >
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
         <View style={styles.emptyContainer}>
@@ -397,23 +535,23 @@ export function MyOrdersScreen() {
               colors={["#FFEBEE", "#FFCDD2"]}
               style={styles.emptyGradient}
             >
-              <Ionicons name="person-outline" size={60} color="#C62828" />
+              <Ionicons name="person-outline" size={54} color="#C62828" />
             </LinearGradient>
           </View>
           <Text style={styles.emptyTitle}>Sign In Required</Text>
           <Text style={styles.emptyMessage}>
-            Please sign in to view your orders and track deliveries.
+            Please sign in to view your orders, payment history, and track deliveries.
           </Text>
           <TouchableOpacity
             style={styles.emptyBtn}
             onPress={() => navigation.navigate("Login")}
-            activeOpacity={0.8}
+            activeOpacity={0.85}
           >
             <LinearGradient
               colors={[FNP_COLORS.primary, FNP_COLORS.primaryDark]}
               style={styles.emptyBtnGradient}
             >
-              <Ionicons name="log-in-outline" size={20} color="#FFFFFF" />
+              <Ionicons name="log-in-outline" size={18} color="#FFFFFF" />
               <Text style={styles.emptyBtnText}>Sign In</Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -422,57 +560,138 @@ export function MyOrdersScreen() {
     );
   }
 
-  // FNP-Style Empty Orders
-  if (!orders || orders.length === 0) {
-    return (
-      <ScreenContainer
-        onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
-        headerTitle="My Orders"
-        scroll={false} // ✅ Add this to prevent nested ScrollView
-      >
-        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-        <FlatList
-          data={[]}
-          ListHeaderComponent={<EmptyOrdersState navigation={navigation} />}
-          ListFooterComponent={<TrackSection navigation={navigation} />}
-          contentContainerStyle={styles.emptyListContent}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={[FNP_COLORS.primary]}
-            />
-          }
-        />
-      </ScreenContainer>
-    );
-  }
+  // Segmented Tabs Header
+  const renderTabsHeader = () => (
+    <View style={styles.tabsHeaderWrap}>
+      <View style={styles.tabsContainer}>
+        {/* Tab 1: Active */}
+        <TouchableOpacity
+          style={[styles.tabBtn, activeTab === "active" && styles.tabBtnActive]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setActiveTab("active");
+          }}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name="cube-outline"
+            size={15}
+            color={activeTab === "active" ? FNP_COLORS.primary : "#666"}
+          />
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "active" && styles.tabTextActive,
+            ]}
+          >
+            Active
+          </Text>
+          {activeOrders.length > 0 && (
+            <View
+              style={[
+                styles.tabBadge,
+                activeTab === "active" && styles.tabBadgeActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.tabBadgeText,
+                  activeTab === "active" && styles.tabBadgeTextActive,
+                ]}
+              >
+                {activeOrders.length}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
 
-  // Calculate stats safely
-  const totalOrders = orders.length;
-  const deliveredOrders = orders.filter((o) => (o.orderStatus || o.status) === "delivered").length;
-  const shippedOrders = orders.filter((o) => {
-    const status = o.orderStatus || o.status;
-    return status === "shipped" || status === "processing";
-  }).length;
+        {/* Tab 2: History (Delivered) */}
+        <TouchableOpacity
+          style={[
+            styles.tabBtn,
+            activeTab === "history" && styles.tabBtnActive,
+          ]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setActiveTab("history");
+          }}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name="checkmark-circle-outline"
+            size={15}
+            color={activeTab === "history" ? FNP_COLORS.primary : "#666"}
+          />
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "history" && styles.tabTextActive,
+            ]}
+          >
+            History
+          </Text>
+          {historyOrders.length > 0 && (
+            <View
+              style={[
+                styles.tabBadge,
+                activeTab === "history" && styles.tabBadgeActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.tabBadgeText,
+                  activeTab === "history" && styles.tabBadgeTextActive,
+                ]}
+              >
+                {historyOrders.length}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
 
-  // Render stats header
-  const renderStatsHeader = () => (
-    <View style={styles.statsBar}>
-      <View style={styles.statItem}>
-        <Text style={styles.statNumber}>{totalOrders}</Text>
-        <Text style={styles.statLabel}>Total Orders</Text>
-      </View>
-      <View style={styles.statDivider} />
-      <View style={styles.statItem}>
-        <Text style={styles.statNumber}>{deliveredOrders}</Text>
-        <Text style={styles.statLabel}>Delivered</Text>
-      </View>
-      <View style={styles.statDivider} />
-      <View style={styles.statItem}>
-        <Text style={styles.statNumber}>{shippedOrders}</Text>
-        <Text style={styles.statLabel}>In Transit</Text>
+        {/* Tab 3: Pending Payment */}
+        <TouchableOpacity
+          style={[
+            styles.tabBtn,
+            activeTab === "pending" && styles.tabBtnActivePending,
+          ]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setActiveTab("pending");
+          }}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name="alert-circle-outline"
+            size={15}
+            color={activeTab === "pending" ? "#D97706" : "#666"}
+          />
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "pending" && styles.tabTextActivePending,
+            ]}
+          >
+            Pending
+          </Text>
+          {pendingOrders.length > 0 && (
+            <View
+              style={[
+                styles.tabBadgePending,
+                activeTab === "pending" && styles.tabBadgePendingActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.tabBadgeTextPending,
+                  activeTab === "pending" && styles.tabBadgeTextPendingActive,
+                ]}
+              >
+                {pendingOrders.length}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -481,16 +700,25 @@ export function MyOrdersScreen() {
     <ScreenContainer
       onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
       headerTitle="My Orders"
-      scroll={false} // ✅ Add this to prevent nested ScrollView
+      scroll={false}
     >
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* FNP-Style Order Cards with Stats as Header */}
+      {/* Tabs Row */}
+      {renderTabsHeader()}
+
+      {/* Order List */}
       <FlatList
-        data={orders}
-        keyExtractor={(item) => item.id || item._id || Math.random().toString()}
+        data={currentList}
+        keyExtractor={(item) =>
+          item.id || item._id || Math.random().toString()
+        }
         renderItem={({ item }) => (
-          <OrderCard order={item} onPress={handleOrderPress} />
+          <OrderCard
+            order={item}
+            onPress={handleOrderPress}
+            tabKey={activeTab}
+          />
         )}
         contentContainerStyle={styles.orderList}
         showsVerticalScrollIndicator={false}
@@ -499,110 +727,134 @@ export function MyOrdersScreen() {
             refreshing={refreshing}
             onRefresh={onRefresh}
             colors={[FNP_COLORS.primary]}
+            tintColor={FNP_COLORS.primary}
           />
         }
-        ListHeaderComponent={renderStatsHeader()}
-        ListFooterComponent={<TrackSection navigation={navigation} />}
+        ListEmptyComponent={
+          <TabEmptyState tabKey={activeTab} navigation={navigation} />
+        }
       />
     </ScreenContainer>
   );
 }
 
+export default MyOrdersScreen;
+
 const styles = StyleSheet.create({
-  // ⏳ Loading Styles
-  loadingWrap: {
+  // ── Tabs Header ──
+  tabsHeaderWrap: {
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: spacing.screen,
+    paddingTop: 10,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  tabsContainer: {
+    flexDirection: "row",
+    backgroundColor: "#F4F6F4",
+    borderRadius: 14,
+    padding: 4,
+    gap: 4,
+  },
+  tabBtn: {
     flex: 1,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    padding: 40,
+    paddingVertical: 9,
+    borderRadius: 10,
+    gap: 5,
   },
-  loadingCard: {
+  tabBtnActive: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    padding: 40,
-    alignItems: "center",
-    width: "100%",
-    maxWidth: 320,
-    ...shadows.medium,
-  },
-  loadingText: {
-    ...typography.body,
-    fontWeight: "700",
-    color: FNP_COLORS.text,
-    marginTop: 20,
-  },
-  loadingSubtext: {
-    ...typography.bodySmall,
-    color: FNP_COLORS.textLight,
-    fontWeight: "500",
-    marginTop: 6,
-    textAlign: "center",
-  },
-
-  // 📊 Stats Bar
-  statsBar: {
-    flexDirection: "row",
-    paddingHorizontal: spacing.screen,
-    paddingVertical: 16,
-    backgroundColor: "#FFFFFF",
-    marginHorizontal: spacing.screen,
-    marginBottom: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#F0F0F0",
     ...shadows.small,
   },
-  statItem: {
-    flex: 1,
-    alignItems: "center",
+  tabBtnActivePending: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#FDE68A",
+    ...shadows.small,
   },
-  statNumber: {
-    fontSize: 20,
-    fontWeight: "900",
-    color: FNP_COLORS.text,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: FNP_COLORS.textLight,
+  tabText: {
+    fontSize: 12,
     fontWeight: "600",
-    marginTop: 2,
+    color: "#666666",
   },
-  statDivider: {
-    width: 1,
-    backgroundColor: "#F0F0F0",
+  tabTextActive: {
+    color: FNP_COLORS.primary,
+    fontWeight: "700",
+  },
+  tabTextActivePending: {
+    color: "#D97706",
+    fontWeight: "700",
+  },
+  tabBadge: {
+    backgroundColor: "#E2E8F0",
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  tabBadgeActive: {
+    backgroundColor: FNP_COLORS.primaryLight,
+  },
+  tabBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#475569",
+  },
+  tabBadgeTextActive: {
+    color: FNP_COLORS.primaryDark,
+  },
+  tabBadgePending: {
+    backgroundColor: "#FEE2E2",
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  tabBadgePendingActive: {
+    backgroundColor: "#FEF3C7",
+  },
+  tabBadgeTextPending: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#DC2626",
+  },
+  tabBadgeTextPendingActive: {
+    color: "#D97706",
   },
 
-  paymentPendingText: {
-    fontSize: 11,
-    color: FNP_COLORS.warning,
-    fontWeight: "600",
-    marginBottom: 8,
-    marginLeft: 4,
-  },
+  // ── List ──
   orderList: {
     paddingHorizontal: spacing.screen,
-    paddingBottom: 20,
+    paddingTop: 16,
+    paddingBottom: 30,
+    flexGrow: 1,
   },
 
-  // 🏷️ Order Card
+  // ── Order Card ──
   orderCardWrapper: {
-    marginBottom: 16,
+    marginBottom: 14,
   },
   orderCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 20,
+    borderRadius: 18,
     padding: 16,
     borderWidth: 1,
     borderColor: "#F0F0F0",
     ...shadows.small,
   },
+  orderCardPending: {
+    borderColor: "#FDE68A",
+    backgroundColor: "#FFFEFA",
+  },
 
-  // 📝 Order Header
+  // ── Order Header ──
   orderHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 10,
   },
   orderNumberWrap: {
     flexDirection: "row",
@@ -618,30 +870,51 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   orderNumber: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "800",
     color: FNP_COLORS.text,
   },
 
-  // 🏷️ Status Badge
+  // ── Status Badge ──
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    paddingHorizontal: 10,
+    paddingHorizontal: 9,
     paddingVertical: 4,
     borderRadius: 12,
   },
   statusText: {
     fontSize: 11,
     fontWeight: "700",
-    textTransform: "capitalize",
   },
 
-  // 📅 Order Meta
+  // ── Pending Alert Banner ──
+  pendingAlertBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#FFFBEB",
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#FDE68A",
+  },
+  pendingAlertText: {
+    flex: 1,
+    fontSize: 11,
+    color: "#92400E",
+    fontWeight: "500",
+    lineHeight: 15,
+  },
+
+  // ── Date & Meta ──
   orderMeta: {
     flexDirection: "row",
-    gap: 16,
+    flexWrap: "wrap",
+    gap: 14,
     marginBottom: 12,
   },
   metaItem: {
@@ -660,7 +933,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 
-  // 🛍️ Order Items
+  // ── Order Items ──
   orderItems: {
     flexDirection: "row",
     gap: 8,
@@ -694,12 +967,12 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
 
-  // 💰 Order Footer
+  // ── Order Footer ──
   orderFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingTop: 14,
+    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: "#F5F5F5",
   },
@@ -714,7 +987,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   orderTotal: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "900",
     color: FNP_COLORS.primary,
   },
@@ -728,8 +1001,28 @@ const styles = StyleSheet.create({
     color: FNP_COLORS.primary,
     fontWeight: "700",
   },
+  payNowBadgeBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "#D97706",
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 10,
+    shadowColor: "#D97706",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  payNowBadgeBtnText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 0.2,
+  },
 
-  // 📊 Progress Bar
+  // ── Progress Bar ──
   progressBar: {
     marginTop: 12,
     height: 4,
@@ -743,43 +1036,42 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
 
-  // 🚀 Empty State
+  // ── Empty State ──
   emptyContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    padding: 40,
-    paddingTop: 60,
-  },
-  emptyListContent: {
-    flexGrow: 1,
+    padding: 36,
+    paddingTop: 48,
   },
   emptyIconWrap: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   emptyGradient: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     alignItems: "center",
     justifyContent: "center",
   },
   emptyTitle: {
     ...typography.h2,
     color: FNP_COLORS.text,
-    fontSize: 24,
-    marginBottom: 8,
+    fontSize: 20,
+    marginBottom: 6,
+    textAlign: "center",
   },
   emptyMessage: {
     ...typography.body,
     color: FNP_COLORS.textSecondary,
     textAlign: "center",
-    lineHeight: 22,
-    marginBottom: 24,
-    paddingHorizontal: 20,
+    lineHeight: 20,
+    fontSize: 13,
+    marginBottom: 20,
+    paddingHorizontal: 12,
   },
   emptyBtn: {
-    borderRadius: 16,
+    borderRadius: 14,
     overflow: "hidden",
     ...shadows.medium,
   },
@@ -787,66 +1079,42 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    paddingHorizontal: 28,
-    paddingVertical: 14,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
   },
   emptyBtnText: {
     color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800",
-  },
-
-  // 🔍 Track Section
-  trackSection: {
-    paddingVertical: 8,
-    paddingHorizontal: spacing.screen,
-    marginBottom: 20,
-  },
-  trackGradient: {
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#F0F0F0",
-  },
-  trackContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  trackIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: FNP_COLORS.primaryLight,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  trackTextWrap: {
-    flex: 1,
-  },
-  trackTitle: {
     fontSize: 14,
     fontWeight: "700",
-    color: FNP_COLORS.text,
   },
-  trackSubtext: {
-    fontSize: 11,
+
+  // ── Loading ──
+  loadingWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 40,
+  },
+  loadingCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 36,
+    alignItems: "center",
+    width: "100%",
+    maxWidth: 300,
+    ...shadows.medium,
+  },
+  loadingText: {
+    ...typography.body,
+    fontWeight: "700",
+    color: FNP_COLORS.text,
+    marginTop: 16,
+  },
+  loadingSubtext: {
+    ...typography.bodySmall,
     color: FNP_COLORS.textLight,
     fontWeight: "500",
-    marginTop: 2,
-  },
-  trackBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: FNP_COLORS.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-  trackBtnText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "700",
+    marginTop: 6,
+    textAlign: "center",
   },
 });

@@ -56,11 +56,24 @@ export function ProductCardSkeleton() {
   );
 }
 
-export function ProductGridSkeleton({ count = 4 }) {
+export function ProductGridSkeleton({ count = 4, padding = true, style }) {
   return (
-    <View style={styles.grid}>
+    <View style={[styles.grid, !padding && styles.gridNoPadding, style]}>
       {Array.from({ length: count }).map((_, i) => (
         <ProductCardSkeleton key={i} />
+      ))}
+    </View>
+  );
+}
+
+export function CategoryCarouselSkeleton({ count = 5 }) {
+  return (
+    <View style={styles.categoryCarousel}>
+      {Array.from({ length: count }).map((_, i) => (
+        <View key={i} style={styles.categoryChipSkeleton}>
+          <SkeletonBox width={26} height={26} style={{ borderRadius: 13 }} />
+          <SkeletonBox width={64 + (i % 3) * 16} height={14} style={{ borderRadius: 7 }} />
+        </View>
       ))}
     </View>
   );
@@ -137,6 +150,29 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "space-between",
     padding: spacing.screen,
+    width: "100%",
+  },
+  gridNoPadding: {
+    padding: 0,
+    paddingHorizontal: 0,
+  },
+  categoryCarousel: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    gap: 8,
+    paddingBottom: 4,
+  },
+  categoryChipSkeleton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 25,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    marginRight: 8,
   },
   list: { padding: spacing.screen },
   listItem: {

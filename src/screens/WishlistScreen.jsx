@@ -29,6 +29,8 @@ import { addToCart, addToGuestCart } from "../store/thunks/cartThunks";
 import { showToast } from "../store/slices/uiSlice";
 import { validateCartSelection } from "../utils/cartSelection";
 import { resolveImageUrl, PLACEHOLDER_IMAGE } from "../utils/catalogNormalize";
+import { ScreenContainer } from "../components/common/ScreenContainer";
+import { EmptyState } from "../components/common/EmptyState";
 
 const { width } = Dimensions.get("window");
 

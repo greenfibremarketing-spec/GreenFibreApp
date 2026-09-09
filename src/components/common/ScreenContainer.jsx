@@ -15,6 +15,7 @@ export function ScreenContainer({
   showHeader = true,
   showOfferBar = true,
   headerTitle,
+  headerRight,
   onMenuPress,
   style,
   contentStyle,
@@ -38,6 +39,7 @@ export function ScreenContainer({
         <AppHeader
           showOfferBar={showOfferBar}
           title={headerTitle}
+          headerRight={headerRight}
           onMenuPress={onMenuPress}
         />
       )}
@@ -51,6 +53,8 @@ export function ScreenContainer({
     </View>
   );
 }
+
+export default ScreenContainer;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -65,3 +69,4 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
 });
+

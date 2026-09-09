@@ -28,7 +28,7 @@ const extendedContent = {
     { metric: "Happy Customers", value: "50k+", icon: "happy-outline" },
     { metric: "Eco Products", value: "200+", icon: "leaf-outline" },
     { metric: "Trees Planted", value: "100k+", icon: "earth-outline" },
-    { metric: "Plastic Saved", value: "10 Tons", icon: "recycle-outline" },
+    { metric: "Plastic Saved", value: "10 Tons", icon: "sync-outline" },
   ],
   awards: [
     {
