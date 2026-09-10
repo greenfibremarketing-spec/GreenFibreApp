@@ -210,19 +210,18 @@ export function buildRazorpayCheckoutHtml({
           color: '${safeThemeColor}'
         },
         modal: {
-          confirm_close: true,
+          confirm_close: false,
           ondismiss: function() {
-            heading.innerText = 'Payment Incomplete';
-            statusMsg.innerText = 'You dismissed the payment prompt.';
-            retryBtn.style.display = 'block';
             sendMessage('DISMISSED', { reason: 'user_dismissed' });
           }
         },
         handler: function(response) {
-          heading.innerText = 'Verifying Payment...';
-          statusMsg.innerText = 'Please wait while we confirm your transaction.';
-          loader.style.display = 'block';
-          retryBtn.style.display = 'none';
+          var heading = document.getElementById('heading');
+          var statusMsg = document.getElementById('status-msg');
+          var loader = document.getElementById('loader');
+          if (heading) heading.innerText = 'Verifying Payment...';
+          if (statusMsg) statusMsg.innerText = 'Please wait while we confirm your transaction.';
+          if (loader) loader.style.display = 'block';
           sendMessage('SUCCESS', {
             razorpay_order_id: response.razorpay_order_id,
             razorpay_payment_id: response.razorpay_payment_id,
@@ -234,24 +233,17 @@ export function buildRazorpayCheckoutHtml({
       try {
         rzpInstance = new window.Razorpay(options);
         rzpInstance.on('payment.failed', function(response) {
-          var errDesc = response.error ? response.error.description : 'Transaction failed';
-          heading.innerText = 'Payment Failed';
-          statusMsg.innerText = errDesc;
-          retryBtn.style.display = 'block';
           sendMessage('FAILED', { error: response.error });
         });
         rzpInstance.open();
       } catch (err) {
-        heading.innerText = 'Payment Error';
-        statusMsg.innerText = err.message || 'Could not open checkout';
-        retryBtn.style.display = 'block';
-        sendMessage('ERROR', { message: err.message });
+        sendMessage('ERROR', { message: err.message || 'Could not open payment gateway' });
       }
     }
 
     window.onload = function() {
       // Allow slight delay for WebView to stabilize
-      setTimeout(openRazorpayModal, 400);
+      setTimeout(openRazorpayModal, 300);
     };
   </script>
 </body>

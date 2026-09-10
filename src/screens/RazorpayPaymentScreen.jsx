@@ -48,25 +48,11 @@ export function RazorpayPaymentScreen({ navigation, route }) {
   });
 
   const handleClose = () => {
-    Alert.alert(
-      'Cancel Payment?',
-      'Are you sure you want to cancel? Your order and cart will remain saved.',
-      [
-        { text: 'Continue Payment', style: 'cancel' },
-        {
-          text: 'Cancel Order',
-          style: 'destructive',
-          onPress: () => {
-            navigation.navigate('OrderConfirmation', {
-              orderId,
-              success: false,
-              message: 'Payment was cancelled. You can complete it anytime from My Orders.',
-            });
-          },
-        },
-      ],
-      { cancelable: true }
-    );
+    navigation.replace('OrderConfirmation', {
+      orderId,
+      success: false,
+      message: 'Payment was cancelled. Your order has been saved in your Order History.',
+    });
   };
 
   const handleMessage = async (event) => {
@@ -118,33 +104,31 @@ export function RazorpayPaymentScreen({ navigation, route }) {
           );
         }
       } else if (type === 'DISMISSED') {
-        // User closed the Razorpay modal
-        // Keep screen open or prompt user
+        // User closed / cancelled the Razorpay modal
+        try {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        } catch (_) {}
+        navigation.replace('OrderConfirmation', {
+          orderId,
+          success: false,
+          message: 'Payment was cancelled. Your order has been saved in your Order History.',
+        });
       } else if (type === 'FAILED') {
         const errorDesc = payload?.error?.description || 'Transaction was declined by bank or cancelled.';
         try {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         } catch (_) {}
-
-        Alert.alert('Payment Failed', errorDesc, [
-          { text: 'Retry', onPress: () => webViewRef.current?.reload() },
-          {
-            text: 'Cancel',
-            style: 'cancel',
-            onPress: () => {
-              navigation.replace('OrderConfirmation', {
-                orderId,
-                success: false,
-                message: errorDesc,
-              });
-            },
-          },
-        ]);
+        navigation.replace('OrderConfirmation', {
+          orderId,
+          success: false,
+          message: errorDesc,
+        });
       } else if (type === 'ERROR') {
-        Alert.alert('Payment Gateway Error', payload?.message || 'Unable to load payment portal.', [
-          { text: 'Retry', onPress: () => webViewRef.current?.reload() },
-          { text: 'Go Back', style: 'cancel', onPress: () => navigation.goBack() },
-        ]);
+        navigation.replace('OrderConfirmation', {
+          orderId,
+          success: false,
+          message: payload?.message || 'Unable to connect to payment gateway.',
+        });
       }
     } catch (parseErr) {
       console.error('Error handling webview postMessage:', parseErr);

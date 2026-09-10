@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ScreenContainer } from '../components/common/ScreenContainer';
 import { Button } from '../components/common/Button';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { fetchOrderById } from '../store/thunks/orderThunks';
+import { fetchOrderById, fetchOrders } from '../store/thunks/orderThunks';
 import { selectCurrentOrder } from '../store/slices/ordersSlice';
 import { formatPrice } from '../utils/helpers';
 
@@ -18,9 +18,11 @@ export function OrderConfirmationScreen({ navigation, route }) {
     if (orderId && (!order || order._id !== orderId)) {
       dispatch(fetchOrderById(orderId));
     }
+    // Refresh user order history
+    dispatch(fetchOrders());
   }, [dispatch, orderId, order]);
 
-  const isSuccess = success;
+  const isSuccess = Boolean(success);
   const displayOrder = order?._id === orderId ? order : null;
 
   return (
@@ -38,46 +40,71 @@ export function OrderConfirmationScreen({ navigation, route }) {
         </LinearGradient>
 
         <Text style={styles.title}>
-          {isSuccess ? 'Payment Successful' : 'Payment Incomplete'}
+          {isSuccess ? 'Payment Successful' : 'Payment Failed'}
         </Text>
 
         <Text style={styles.subtitle}>
           {message
             || (isSuccess
               ? 'Your payment was verified and your order is being processed.'
-              : 'Your order was created but payment was not completed. Your cart has been preserved.')}
+              : 'Your payment was cancelled or declined. Your order has been saved in your Order History.')}
         </Text>
 
         {displayOrder ? (
           <View style={styles.detailsCard}>
             <Text style={styles.detailLabel}>Order Number</Text>
             <Text style={styles.detailValue}>
-              {displayOrder.easebuzzOrderId || displayOrder._id}
+              {displayOrder.easebuzzOrderId || displayOrder.orderNumber || displayOrder._id}
             </Text>
-            <Text style={styles.detailLabel}>Amount Paid</Text>
+            <Text style={styles.detailLabel}>
+              {isSuccess ? 'Amount Paid' : 'Order Total'}
+            </Text>
             <Text style={styles.detailValue}>
               {formatPrice(displayOrder.finalAmount || displayOrder.totalAmount || 0)}
             </Text>
-            <Text style={styles.detailLabel}>Status</Text>
-            <Text style={styles.detailValue}>
-              {displayOrder.orderStatus || displayOrder.status}
+            <Text style={styles.detailLabel}>Payment Status</Text>
+            <Text
+              style={[
+                styles.detailValue,
+                !isSuccess && { color: '#C62828' },
+              ]}
+            >
+              {isSuccess ? (displayOrder.orderStatus || 'Confirmed') : 'Pending / Failed'}
             </Text>
           </View>
         ) : null}
 
         <View style={styles.actions}>
-          {orderId ? (
-            <Button
-              title="Track Order"
-              onPress={() => navigation.navigate('TrackOrder', { orderId })}
-              style={styles.actionBtn}
-            />
-          ) : null}
+          <Button
+            title={isSuccess ? 'Track Order' : 'View in My Orders'}
+            onPress={() => {
+              if (isSuccess && orderId) {
+                navigation.navigate('TrackOrder', { orderId });
+              } else {
+                navigation.navigate('Main', {
+                  screen: 'Tabs',
+                  params: {
+                    screen: 'Orders',
+                  },
+                });
+              }
+            }}
+            style={styles.actionBtn}
+          />
           <TouchableOpacity
-            onPress={() => navigation.navigate('Main')}
+            onPress={() =>
+              navigation.navigate('Main', {
+                screen: 'Tabs',
+                params: {
+                  screen: 'Shop',
+                },
+              })
+            }
             style={styles.secondaryBtn}
           >
-            <Text style={styles.secondaryBtnText}>Continue Shopping</Text>
+            <Text style={styles.secondaryBtnText}>
+              {isSuccess ? 'Continue Shopping' : 'Return to Shop'}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
