@@ -659,21 +659,21 @@ export function ProductDetailsScreen({ navigation, route }) {
           {/* Features */}
           {product.featuresList?.length > 0 && (
             <View style={styles.featuresSection}>
-              <View style={styles.sectionHeader}>
+              <View style={styles.featuresHeader}>
                 <LinearGradient
                   colors={[natureColors.primaryLight, "#C8E6C9"]}
-                  style={styles.sectionIcon}
+                  style={styles.featuresIcon}
                 >
-                  <Ionicons name="leaf-outline" size={16} color="#2E7D32" />
+                  <Ionicons name="leaf-outline" size={15} color="#2E7D32" />
                 </LinearGradient>
-                <Text style={styles.sectionTitle}>🌿 Eco Features</Text>
+                <Text style={styles.featuresTitle}>🌿 Eco Features</Text>
               </View>
-              <FlatList
-                data={product.featuresList}
-                renderItem={renderFeature}
-                keyExtractor={(item, index) => index.toString()}
-                scrollEnabled={false}
-              />
+              {product.featuresList.map((item, index) => (
+                <View key={`feat-${index}`} style={styles.featureItemRow}>
+                  <Ionicons name="checkmark-circle" size={16} color="#2E7D32" />
+                  <Text style={styles.featureItemText}>{String(item)}</Text>
+                </View>
+              ))}
             </View>
           )}
 
@@ -1298,5 +1298,46 @@ const styles = StyleSheet.create({
   // ===== SPACER =====
   bottomSpacer: {
     height: 30,
+  },
+
+  // ===== ECO FEATURES =====
+  featuresSection: {
+    marginTop: 16,
+    marginBottom: 8,
+    padding: 14,
+    backgroundColor: "rgba(46, 125, 50, 0.05)",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(46, 125, 50, 0.15)",
+  },
+  featuresHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 10,
+  },
+  featuresIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  featuresTitle: {
+    fontSize: 15,
+    fontFamily: "DMSans_700Bold",
+    color: "#1C4A2A",
+  },
+  featureItemRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 4,
+  },
+  featureItemText: {
+    fontSize: 13.5,
+    fontFamily: "DMSans_400Regular",
+    color: "#333333",
+    flex: 1,
   },
 });

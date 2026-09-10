@@ -26,6 +26,8 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "org.greenfibre.app",
+      "versionCode": 1,
+      "permissions": ["INTERNET"],
       "predictiveBackGestureEnabled": false
     },
     "web": {

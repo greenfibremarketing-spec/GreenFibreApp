@@ -190,14 +190,6 @@ export function LoginScreen({ navigation }) {
     }
   };
 
-  const handleSocialLogin = (provider) => {
-    Alert.alert(
-      `${provider} Login`,
-      `Sign in with ${provider} will be available soon.`,
-      [{ text: "OK" }],
-    );
-  };
-
   // Handle next input
   const handleNext = () => {
     passwordInputRef.current?.focus();
@@ -389,35 +381,6 @@ export function LoginScreen({ navigation }) {
                   </Text>
                 </LinearGradient>
               </TouchableOpacity>
-
-              {/* Social Login */}
-              <View style={styles.socialSection}>
-                <View style={styles.dividerContainer}>
-                  <View style={styles.divider} />
-                  <Text style={styles.dividerText}>or continue with</Text>
-                  <View style={styles.divider} />
-                </View>
-
-                <View style={styles.socialButtons}>
-                  <TouchableOpacity
-                    style={[styles.socialBtn, styles.socialBtnGoogle]}
-                    onPress={() => handleSocialLogin("Google")}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="logo-google" size={20} color="#EA4335" />
-                    <Text style={styles.socialBtnText}>Google</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.socialBtn, styles.socialBtnApple]}
-                    onPress={() => handleSocialLogin("Apple")}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="logo-apple" size={20} color="#000" />
-                    <Text style={styles.socialBtnText}>Apple</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
 
               <View style={styles.registerRow}>
                 <Text style={styles.registerText}>New to {brand.name}?</Text>

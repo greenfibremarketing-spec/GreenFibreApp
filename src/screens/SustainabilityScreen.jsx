@@ -9,6 +9,7 @@ import {
   Dimensions,
   Linking,
   Alert,
+  Share,
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
@@ -66,21 +67,15 @@ export function SustainabilityScreen() {
   };
 
   // Handle share
-  const handleShare = () => {
-    Alert.alert(
-      "Share",
-      "Share our sustainability initiatives with your friends!",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Share",
-          onPress: () => {
-            // Share functionality
-            Alert.alert("Share", "Sharing feature coming soon!");
-          },
-        },
-      ],
-    );
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: "Join Green Fibre's sustainability journey! Discover eco-friendly fashion and sustainable textiles: https://greenfibre.org",
+        title: "Green Fibre - Sustainability",
+      });
+    } catch (error) {
+      // Ignored or dismissed by user
+    }
   };
 
   // Safe data access with fallbacks
