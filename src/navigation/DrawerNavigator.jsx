@@ -10,8 +10,8 @@ import {
   Linking,
   Animated,
   Dimensions,
-  Alert,
 } from "react-native";
+import { CustomAlert } from "../components/common/CustomAlert";
 import { Image } from "expo-image";
 import {
   createDrawerNavigator,
@@ -83,7 +83,7 @@ function CustomDrawerContent(props) {
   }, []);
 
   const handleLogout = () => {
-    Alert.alert(
+    CustomAlert.alert(
       "Logout",
       "Are you sure you want to logout?",
       [

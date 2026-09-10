@@ -10,10 +10,10 @@ import {
   ScrollView,
   TextInput,
   Dimensions,
-  Alert,
   Platform,
   ActivityIndicator,
 } from "react-native";
+import { CustomAlert } from "../components/common/CustomAlert";
 import { Image } from "expo-image";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -229,7 +229,7 @@ export function CartScreen({ navigation }) {
     const { productId, colorIndex } = item;
 
     if (quantity < 1) {
-      Alert.alert(
+      CustomAlert.alert(
         "Remove Item",
         `Remove "${item.product?.name || "this item"}" from your cart?`,
         [
@@ -261,7 +261,7 @@ export function CartScreen({ navigation }) {
   };
 
   const handleClearCart = () => {
-    Alert.alert(
+    CustomAlert.alert(
       "Clear Shopping Bag",
       "Are you sure you want to remove all items from your cart?",
       [

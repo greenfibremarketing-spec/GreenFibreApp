@@ -5,13 +5,13 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   Animated,
   TextInput,
 } from "react-native";
+import { CustomAlert } from "../components/common/CustomAlert";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { greenFibreAuthService } from "../api/services/greenFibreAuthService";
@@ -164,10 +164,9 @@ export default function ResetPasswordScreen({ navigation, route }) {
     const confirmError = validateField("confirmPassword", form.confirmPassword);
 
     if (emailError || tokenError || passwordError || confirmError) {
-      Alert.alert(
+      CustomAlert.alert(
         "Validation Error",
         "Please fix all errors before continuing.",
-        [{ text: "OK" }],
       );
       return;
     }
@@ -184,8 +183,8 @@ export default function ResetPasswordScreen({ navigation, route }) {
 
       if (response.success) {
         // Success
-        Alert.alert(
-          "✅ Password Reset Successful",
+        CustomAlert.alert(
+          "Password Reset Successful",
           "Your password has been updated successfully. Please login with your new password.",
           [
             {
@@ -200,14 +199,14 @@ export default function ResetPasswordScreen({ navigation, route }) {
         );
       } else {
         // Error from backend
-        Alert.alert(
+        CustomAlert.alert(
           "Reset Failed",
           response.message || "Failed to reset password. Please try again.",
         );
       }
     } catch (error) {
       // Network or other errors
-      Alert.alert(
+      CustomAlert.alert(
         "Error",
         error?.response?.data?.message
           || error.message
@@ -225,14 +224,14 @@ export default function ResetPasswordScreen({ navigation, route }) {
   const handleResendToken = () => {
     // Validate email before resending
     if (!form.email || form.email.trim().length === 0) {
-      Alert.alert(
+      CustomAlert.alert(
         "Email Required",
         "Please enter your email address to receive a new token.",
       );
       return;
     }
 
-    Alert.alert(
+    CustomAlert.alert(
       "Resend Token",
       `A new 6-digit reset token will be sent to ${form.email}.`,
       [
@@ -250,21 +249,20 @@ export default function ResetPasswordScreen({ navigation, route }) {
               );
 
               if (response.success) {
-                Alert.alert(
-                  "✅ Token Sent",
+                CustomAlert.alert(
+                  "Token Sent",
                   response.message
                     || "A new 6-digit reset token has been sent to your email.",
-                  [{ text: "OK" }],
                 );
               } else {
-                Alert.alert(
+                CustomAlert.alert(
                   "Failed",
                   response.message
                     || "Failed to send reset token. Please try again.",
                 );
               }
             } catch (error) {
-              Alert.alert(
+              CustomAlert.alert(
                 "Error",
                 error?.response?.data?.message
                   || error.message

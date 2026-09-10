@@ -7,11 +7,11 @@ import {
   View,
   Text,
   StyleSheet,
-  Alert,
   TouchableOpacity,
   ScrollView,
   Linking,
 } from "react-native";
+import { CustomAlert } from "../components/common/CustomAlert";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -36,20 +36,20 @@ export function ContactScreen() {
 
   const handleSubmit = async () => {
     if (!form.fullName.trim() || !form.email.trim() || !form.message.trim()) {
-      Alert.alert("Please complete the form", "Name, email and message are required.");
+      CustomAlert.alert("Please complete the form", "Name, email and message are required.");
       return;
     }
     setLoading(true);
     try {
       await contactService.submitContactForm(form);
-      Alert.alert(
-        "Message sent",
+      CustomAlert.alert(
+        "Message Sent",
         "Thank you for reaching out. We'll reply within one working day.",
         [{ text: "Done", onPress: () => setForm({ fullName: "", email: "", phone: "", message: "" }) }],
       );
     } catch (e) {
-      Alert.alert(
-        "Couldn't send",
+      CustomAlert.alert(
+        "Couldn't Send",
         e instanceof Error ? e.message : "Please try again or reach us on WhatsApp.",
       );
     } finally {

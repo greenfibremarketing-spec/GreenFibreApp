@@ -4,13 +4,13 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   Animated,
   TextInput,
 } from "react-native";
+import { CustomAlert } from "../components/common/CustomAlert";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { brand } from "../data/content";
@@ -179,10 +179,9 @@ export function RegisterScreen({ navigation }) {
     const confirmError = validateField("confirmPassword", form.confirmPassword);
 
     if (nameError || emailError || phoneError || passwordError || confirmError) {
-      Alert.alert(
+      CustomAlert.alert(
         "Validation Error",
         "Please fix all errors before continuing.",
-        [{ text: "OK" }],
       );
       return;
     }
@@ -215,7 +214,7 @@ export function RegisterScreen({ navigation }) {
           ? e.message
           : "Registration failed. Please try again.";
       dispatch(showToast({ message, type: "error" }));
-      Alert.alert("Registration Failed", message);
+      CustomAlert.alert("Registration Failed", message);
     } finally {
       setSubmitting(false);
     }

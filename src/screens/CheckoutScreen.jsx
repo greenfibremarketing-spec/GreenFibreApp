@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Alert,
   ScrollView,
   TouchableOpacity,
   Dimensions,
@@ -11,6 +10,7 @@ import {
   Platform,
   TextInput,
 } from "react-native";
+import { CustomAlert } from "../components/common/CustomAlert";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
@@ -227,7 +227,7 @@ export function CheckoutScreen({ navigation, route }) {
   const handlePlaceOrder = async () => {
     if (!isFormValid) {
       const missing = getMissingFields();
-      Alert.alert(
+      CustomAlert.alert(
         "Complete Delivery Address",
         `Please fill in the following required field(s) for guaranteed delivery:\n\n• ${missing.join("\n• ")}`,
         [{ text: "Complete Now" }]
@@ -241,7 +241,7 @@ export function CheckoutScreen({ navigation, route }) {
     }
 
     if (cartItems.length === 0) {
-      Alert.alert("Empty Cart", "Your cart is empty. Add items before checkout.");
+      CustomAlert.alert("Empty Cart", "Your cart is empty. Add items before checkout.");
       return;
     }
 
@@ -290,7 +290,7 @@ export function CheckoutScreen({ navigation, route }) {
         typeof error === "string"
           ? error
           : error?.message || "Failed to create order. Please try again.";
-      Alert.alert("Checkout Error", message, [{ text: "OK" }]);
+      CustomAlert.alert("Checkout Error", message, [{ text: "OK" }]);
     } finally {
       setLoading(false);
     }
@@ -353,7 +353,7 @@ export function CheckoutScreen({ navigation, route }) {
       headerRight={
         <TouchableOpacity
           onPress={() =>
-            Alert.alert(
+            CustomAlert.alert(
               "Guaranteed Delivery Support",
               "Green Fibre guarantees 100% safe, eco-packaged delivery. Need help with address or pincode? Reach us at support@greenfibre.org"
             )

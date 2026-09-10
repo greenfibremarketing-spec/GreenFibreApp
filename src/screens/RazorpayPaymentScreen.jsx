@@ -8,9 +8,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   Platform,
 } from 'react-native';
+import { CustomAlert } from '../components/common/CustomAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
@@ -87,7 +87,7 @@ export function RazorpayPaymentScreen({ navigation, route }) {
           });
         } catch (vErr) {
           setVerifying(false);
-          Alert.alert(
+          CustomAlert.alert(
             'Verification Error',
             vErr.message || 'We received your payment but could not verify signature immediately. Check My Orders for status.',
             [

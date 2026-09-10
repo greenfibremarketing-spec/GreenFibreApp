@@ -14,6 +14,7 @@ import { useAppSelector, useAppDispatch } from "./src/store/hooks";
 import { hideToast } from "./src/store/slices/uiSlice";
 import { colors, spacing, typography, shadows } from "./src/theme";
 import { useBrandFonts } from "./src/theme/fonts";
+import { CustomAlertModal } from "./src/components/common/CustomAlert";
 
 // Configure react-native-screens safely for Fabric & nested navigators
 enableScreens(true);
@@ -42,6 +43,7 @@ function AppContent() {
       <StatusBar style="dark" />
       <RootNavigator />
       <ToastOverlay />
+      <CustomAlertModal />
     </View>
   );
 }

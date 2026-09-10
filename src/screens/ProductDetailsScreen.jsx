@@ -9,8 +9,8 @@ import {
   Dimensions,
   Platform,
   FlatList,
-  Alert,
 } from "react-native";
+import { CustomAlert } from "../components/common/CustomAlert";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -158,10 +158,10 @@ export function ProductDetailsScreen({ navigation, route }) {
   const selectedColorStock = product?.colors?.[selectedColorIndex]?.stock ?? 0;
 
   const promptLogin = (message) => {
-    Alert.alert("Login required", message, [
+    CustomAlert.alert("Login Required", message, [
       { text: "Cancel", style: "cancel" },
       {
-        text: "Login",
+        text: "Sign In",
         onPress: () => navigation.navigate("Login"),
       },
     ]);
@@ -355,47 +355,7 @@ export function ProductDetailsScreen({ navigation, route }) {
       )
     : 0;
 
-  // Render feature item safely
-  const renderFeature = ({ item, index }) => {
-    const text =
-      typeof item === "string"
-        ? item
-        : item?.name ||
-          item?.title ||
-          item?.value ||
-          item?.feature ||
-          item?.description ||
-          JSON.stringify(item);
-    if (!text) return null;
 
-    return (
-      <Animated.View
-        key={index}
-        style={[
-          styles.featureItem,
-          {
-            opacity: fadeAnim,
-            transform: [
-              {
-                translateX: fadeAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [-20, 0],
-                }),
-              },
-            ],
-          },
-        ]}
-      >
-        <LinearGradient
-          colors={[natureColors.primaryLight, "#C8E6C9"]}
-          style={styles.featureBullet}
-        >
-          <Ionicons name="leaf-outline" size={14} color={natureColors.primary} />
-        </LinearGradient>
-        <Text style={styles.featureText}>{text}</Text>
-      </Animated.View>
-    );
-  };
 
   return (
     <ScreenContainer

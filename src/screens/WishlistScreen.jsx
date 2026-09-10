@@ -6,11 +6,11 @@ import {
   TouchableOpacity,
   Animated,
   Dimensions,
-  Alert,
   FlatList,
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
+import { CustomAlert } from "../components/common/CustomAlert";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -170,8 +170,8 @@ export function WishlistScreen({ navigation }) {
       return;
     }
 
-    Alert.alert(
-      "🌿 Clear Wishlist",
+    CustomAlert.alert(
+      "Clear Wishlist",
       "Are you sure you want to remove all items from your wishlist?",
       [
         { text: "Cancel", style: "cancel" },
@@ -229,8 +229,8 @@ export function WishlistScreen({ navigation }) {
   const handleBulkRemove = () => {
     if (selectedItems.length === 0) return;
 
-    Alert.alert(
-      "🌿 Remove Items",
+    CustomAlert.alert(
+      "Remove Items",
       `Are you sure you want to remove ${selectedItems.length} items from wishlist?`,
       [
         { text: "Cancel", style: "cancel" },
@@ -259,8 +259,8 @@ export function WishlistScreen({ navigation }) {
   const handleMoveAllToCart = () => {
     if (wishlistProducts.length === 0) return;
 
-    Alert.alert(
-      "🌿 Move All to Cart",
+    CustomAlert.alert(
+      "Move All to Cart",
       `Add all ${wishlistProducts.length} items to cart?`,
       [
         { text: "Cancel", style: "cancel" },

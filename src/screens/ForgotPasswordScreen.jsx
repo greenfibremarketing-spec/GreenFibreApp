@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Alert,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
@@ -12,6 +11,7 @@ import {
   Animated,
   TextInput,
 } from "react-native";
+import { CustomAlert } from "../components/common/CustomAlert";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import AnimatedComponent, {
@@ -136,19 +136,16 @@ export function ForgotPasswordScreen({ navigation }) {
 
     if (!email.trim()) {
       setEmailError("Email is required");
-      Alert.alert(
+      CustomAlert.alert(
         "Missing Email",
         "Please enter the email address tied to your account.",
-        [{ text: "OK" }],
       );
       return;
     }
 
     // Email validation
     if (!validateEmail(email.trim())) {
-      Alert.alert("Invalid Email", "Please enter a valid email address.", [
-        { text: "OK" },
-      ]);
+      CustomAlert.alert("Invalid Email", "Please enter a valid email address.");
       return;
     }
 
@@ -177,7 +174,7 @@ export function ForgotPasswordScreen({ navigation }) {
         || (e instanceof Error ? e.message : null)
         || "Failed to send reset link. Please try again.";
       dispatch(showToast({ message, type: "error" }));
-      Alert.alert("Error", message);
+      CustomAlert.alert("Error", message);
     } finally {
       // NEW: Reset submitting state regardless of success or failure
       setIsSubmitting(false);
@@ -187,19 +184,17 @@ export function ForgotPasswordScreen({ navigation }) {
   const handleResend = () => {
     // NEW: Prevent resend if timer is active or submission is in progress
     if (timer > 0) {
-      Alert.alert(
+      CustomAlert.alert(
         "Please Wait",
         `Please wait ${timer} seconds before requesting a new link.`,
-        [{ text: "OK" }],
       );
       return;
     }
 
     if (isSubmitting || loading) {
-      Alert.alert(
+      CustomAlert.alert(
         "Processing",
         "Your request is being processed. Please wait...",
-        [{ text: "OK" }],
       );
       return;
     }
@@ -279,7 +274,7 @@ export function ForgotPasswordScreen({ navigation }) {
       <TouchableOpacity
         style={styles.helpLink}
         onPress={() =>
-          Alert.alert("Need Help?", "Contact our support team for assistance.")
+          CustomAlert.alert("Need Help?", "Contact our support team for assistance at support@greenfibre.org")
         }
         activeOpacity={0.7}
         disabled={isSubmitting || loading}

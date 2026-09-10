@@ -7,8 +7,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Linking,
-  Alert,
 } from "react-native";
+import { CustomAlert } from "../components/common/CustomAlert";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, DrawerActions } from "@react-navigation/native";
@@ -237,10 +237,10 @@ export function TrackOrderScreen({ route }) {
           },
         });
       } else {
-        Alert.alert("Payment", "Unable to start payment session. Please try again.");
+        CustomAlert.alert("Payment", "Unable to start payment session. Please try again.");
       }
     } catch (err) {
-      Alert.alert("Payment Error", err.message || "Failed to initialize payment.");
+      CustomAlert.alert("Payment Error", err.message || "Failed to initialize payment.");
     } finally {
       setRetrying(false);
     }

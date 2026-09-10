@@ -6,11 +6,11 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Animated,
 } from "react-native";
+import { CustomAlert } from "../components/common/CustomAlert";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
@@ -121,33 +121,26 @@ export function LoginScreen({ navigation }) {
     // Validate email
     if (!email.trim()) {
       setEmailError("Email is required");
-      Alert.alert("Missing Details", "Please enter your email address.", [
-        { text: "OK" },
-      ]);
+      CustomAlert.alert("Missing Details", "Please enter your email address.");
       return;
     }
 
     if (!validateEmail(email.trim())) {
-      Alert.alert("Invalid Email", "Please enter a valid email address.", [
-        { text: "OK" },
-      ]);
+      CustomAlert.alert("Invalid Email", "Please enter a valid email address.");
       return;
     }
 
     // Validate password
     if (!password.trim()) {
       setPasswordError("Password is required");
-      Alert.alert("Missing Details", "Please enter your password.", [
-        { text: "OK" },
-      ]);
+      CustomAlert.alert("Missing Details", "Please enter your password.");
       return;
     }
 
     if (!validatePassword(password)) {
-      Alert.alert(
+      CustomAlert.alert(
         "Invalid Password",
         "Password must be at least 6 characters.",
-        [{ text: "OK" }],
       );
       return;
     }
@@ -186,7 +179,7 @@ export function LoginScreen({ navigation }) {
         e instanceof Error ? e.message : "Login failed. Please try again.";
       dispatch(loginFailure(message));
       dispatch(showToast({ message, type: "error" }));
-      Alert.alert("Sign In Failed", message);
+      CustomAlert.alert("Sign In Failed", message);
     }
   };
 

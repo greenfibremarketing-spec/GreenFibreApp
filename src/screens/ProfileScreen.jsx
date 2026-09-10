@@ -6,10 +6,10 @@ import {
   TouchableOpacity,
   ScrollView,
   Animated,
-  Alert,
   Share,
   Platform,
 } from "react-native";
+import { CustomAlert } from "../components/common/CustomAlert";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -183,7 +183,7 @@ export function ProfileScreen() {
 
   // Handle logout with confirmation
   const handleLogout = () => {
-    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+    CustomAlert.alert("Sign Out", "Are you sure you want to sign out?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Sign Out",
@@ -208,7 +208,7 @@ export function ProfileScreen() {
         title: `Share ${brand.name}`,
       });
     } catch (error) {
-      Alert.alert("Error", "Unable to share at the moment.");
+      CustomAlert.alert("Error", "Unable to share at the moment.");
     }
   };
 
