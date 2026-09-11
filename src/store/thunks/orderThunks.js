@@ -1,6 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { orderService } from '../../api/services/orderService';
-import { paymentService } from '../../api/services/paymentService';
+import { razorpayService } from '../../api/services/razorpayService';
 
 export const fetchMyOrders = createAsyncThunk(
     'orders/fetchMyOrders',
@@ -42,7 +42,7 @@ export const verifyOrderPayment = createAsyncThunk(
     'orders/verifyPayment',
     async (payload, { rejectWithValue }) => {
         try {
-            return await paymentService.verifyPayment(payload);
+            return await razorpayService.verifyPayment(payload);
         }
         catch (error) {
             return rejectWithValue(error.message || 'Payment verification failed');

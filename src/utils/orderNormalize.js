@@ -40,14 +40,13 @@ export function normalizeOrder(rawOrder) {
     return {
         ...order,
         _id: order._id || order.id,
-        id: order._id || order.id,
-        easebuzzOrderId: order.easebuzzOrderId || '',
-        orderNumber: order.easebuzzOrderId || order._id || order.id,
+        razorpayOrderId: order.razorpayOrderId || '',
+        orderNumber: order.orderNumber || order.razorpayOrderId || order._id || order.id,
         totalAmount: order.totalAmount ?? 0,
         discountAmount: order.discountAmount ?? 0,
         finalAmount,
         total: finalAmount,
-        paymentMethod: order.paymentMethod || 'Easebuzz',
+        paymentMethod: order.paymentMethod || 'Razorpay',
         paymentStatus,
         orderStatus,
         status: orderStatus,
@@ -85,7 +84,6 @@ export function normalizeCreateOrderResponse(responseData) {
         message: responseData?.message || '',
         order: normalizeOrder(responseData?.order),
         paymentData: responseData?.paymentData || null,
-        easebuzzUrl: responseData?.easebuzzUrl || '',
     };
 }
 

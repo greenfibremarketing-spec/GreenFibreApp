@@ -54,7 +54,7 @@ export function OrderConfirmationScreen({ navigation, route }) {
           <View style={styles.detailsCard}>
             <Text style={styles.detailLabel}>Order Number</Text>
             <Text style={styles.detailValue}>
-              {displayOrder.easebuzzOrderId || displayOrder.orderNumber || displayOrder._id}
+              {displayOrder.razorpayOrderId || displayOrder.orderNumber || displayOrder._id}
             </Text>
             <Text style={styles.detailLabel}>
               {isSuccess ? 'Amount Paid' : 'Order Total'}

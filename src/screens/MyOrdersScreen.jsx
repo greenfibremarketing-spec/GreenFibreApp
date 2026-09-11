@@ -158,13 +158,13 @@ const OrderCard = ({ order, onPress, tabKey }) => {
   };
 
   const orderNumber =
-    order.easebuzzOrderId || order.orderNumber || order._id || "ORD-0000";
+    order.razorpayOrderId || order.orderNumber || order._id || "ORD-0000";
   const orderDate = order.createdAt || new Date().toISOString();
   const orderItems = order.items || [];
   const orderTotal = order.finalAmount ?? order.total ?? order.totalAmount ?? 0;
   const orderStatus = (order.orderStatus || order.status || "placed").toLowerCase();
   const paymentStatus = (order.paymentStatus || "pending").toLowerCase();
-  const paymentMethod = order.paymentMethod || "Easebuzz";
+  const paymentMethod = order.paymentMethod || "Online";
   const isPendingPayment =
     paymentStatus === "pending" && (paymentMethod || "").toLowerCase() !== "cod";
 

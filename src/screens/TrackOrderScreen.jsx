@@ -117,8 +117,8 @@ export function TrackOrderScreen({ route }) {
               onPress={() => navigation.navigate("TrackOrder", { orderId: item._id })}
             >
               <View>
-                <Text style={styles.orderPickNumber}>
-                  {item.easebuzzOrderId || item._id}
+                <Text style={styles.sheetOrderId}>
+                  #{item.razorpayOrderId || item.orderNumber || item._id}
                 </Text>
                 <Text style={styles.orderPickMeta}>
                   {formatStatusLabel(item.orderStatus || item.status)}
@@ -284,7 +284,7 @@ export function TrackOrderScreen({ route }) {
                   : formatStatusLabel(currentStatus)}
               </Text>
               <Text style={styles.orderNumber}>
-                {displayOrder.easebuzzOrderId || displayOrder._id}
+                {displayOrder.razorpayOrderId || displayOrder.orderNumber || displayOrder._id}
               </Text>
               <Text style={styles.paymentMeta}>
                 Payment:{" "}
