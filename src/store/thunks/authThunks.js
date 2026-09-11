@@ -5,6 +5,9 @@ import { clearCookies, hasAuthCookie, loadCookies } from '../../api/cookieJar';
 import { resetCookieJarReady } from '../../api/authClient';
 import { normalizeAuthUser } from '../../utils/authUser';
 import { loginSuccess, logout, restoreAuth, loginStart } from '../slices/authSlice';
+import { resetCartState } from '../slices/cartSlice';
+import { resetWishlistState } from '../slices/wishlistSlice';
+import { clearCurrentOrder } from '../slices/ordersSlice';
 
 export async function fetchAuthenticatedUser() {
     const profile = await greenFibreAuthService.getProfile();
@@ -68,5 +71,30 @@ export const performLogout = createAsyncThunk(
 
         await AsyncStorage.removeItem('auth_token');
         dispatch(logout());
+        dispatch(resetCartState());
+        dispatch(resetWishlistState());
+        dispatch(clearCurrentOrder());
     },
 );
+
+export const deleteUserAccount = createAsyncThunk(
+    'auth/deleteUserAccount',
+    async (_, { dispatch }) => {
+        try {
+            await greenFibreAuthService.deleteAccount();
+        }
+        catch (err) {
+            await clearCookies();
+            resetCookieJarReady();
+            throw err;
+        }
+        finally {
+            await AsyncStorage.removeItem('auth_token');
+            dispatch(logout());
+            dispatch(resetCartState());
+            dispatch(resetWishlistState());
+            dispatch(clearCurrentOrder());
+        }
+    },
+);
+

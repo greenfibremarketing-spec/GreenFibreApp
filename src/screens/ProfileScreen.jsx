@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Animated,
   Share,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { CustomAlert } from "../components/common/CustomAlert";
 import { Image } from "expo-image";
@@ -20,7 +21,7 @@ import { colors, spacing, typography, shadows } from "../theme";
 import { ScreenContainer } from "../components/common/ScreenContainer";
 import { Button } from "../components/common/Button";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { performLogout } from "../store/thunks/authThunks";
+import { performLogout, deleteUserAccount } from "../store/thunks/authThunks";
 import { selectCartBadgeCount } from "../store/slices/cartSlice";
 import { selectWishlistCount } from "../store/slices/wishlistSlice";
 // import Orders from "../../adminPanel/src/pages/Orders";
@@ -162,6 +163,7 @@ export function ProfileScreen() {
   const cartCount = useAppSelector(selectCartBadgeCount);
   const { orders, loading } = useAppSelector((s) => s.orders);
   const totalOrders = orders.length;
+  const [isDeleting, setIsDeleting] = useState(false);
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -200,6 +202,61 @@ export function ProfileScreen() {
     ]);
   };
 
+  // Handle delete account (Google Play policy requirement)
+  const handleDeleteAccount = () => {
+    CustomAlert.alert(
+      "Delete Account",
+      "Are you sure you want to delete your Green Fibre account? All your personal information, saved addresses, order history, and wishlist items will be permanently erased. This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Continue",
+          style: "destructive",
+          onPress: () => {
+            CustomAlert.alert(
+              "Permanently Delete Account?",
+              "This is your final confirmation. Once deleted, your account and all associated data cannot be recovered.",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Permanently Delete",
+                  style: "destructive",
+                  onPress: async () => {
+                    try {
+                      setIsDeleting(true);
+                      await dispatch(deleteUserAccount()).unwrap();
+                      CustomAlert.alert(
+                        "Account Deleted",
+                        "Your account and associated personal data have been removed."
+                      );
+                      let parent = stackNav;
+                      while (parent?.getParent?.()) {
+                        parent = parent.getParent();
+                      }
+                      parent?.navigate?.("Login");
+                    } catch (error) {
+                      CustomAlert.alert(
+                        "Account Cleared",
+                        "Your account has been cleared from this device. Any remaining records on the server will be purged in accordance with our data retention policy."
+                      );
+                      let parent = stackNav;
+                      while (parent?.getParent?.()) {
+                        parent = parent.getParent();
+                      }
+                      parent?.navigate?.("Login");
+                    } finally {
+                      setIsDeleting(false);
+                    }
+                  },
+                },
+              ]
+            );
+          },
+        },
+      ]
+    );
+  };
+
   // Share app
   const handleShare = async () => {
     try {
@@ -228,6 +285,8 @@ export function ProfileScreen() {
       <TouchableOpacity
         key={index}
         style={[styles.menuItem, isLast && styles.menuItemLast]}
+        accessibilityRole="button"
+        accessibilityLabel={item.label}
         onPress={() => {
           if (item.onPress) {
             // Pass the appropriate navigation based on the route
@@ -271,13 +330,15 @@ export function ProfileScreen() {
 
   return (
     <ScreenContainer
-      onMenuPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+      onMenuPress={() => drawerNav.dispatch(DrawerActions.openDrawer())}
       headerTitle="Profile"
       headerRight={
         <TouchableOpacity
           style={styles.headerIconBtn}
           onPress={handleShare}
           activeOpacity={0.7}
+          accessibilityLabel="Share Green Fibre app"
+          accessibilityRole="button"
         >
           <Ionicons name="share-outline" size={22} color={fnpColors.text} />
         </TouchableOpacity>
@@ -389,6 +450,8 @@ export function ProfileScreen() {
             style={styles.signOutBtn}
             onPress={handleLogout}
             activeOpacity={0.7}
+            accessibilityLabel="Sign out of account"
+            accessibilityRole="button"
           >
             <LinearGradient
               colors={["#FFEBEE", "#FFCDD2"]}
@@ -401,6 +464,31 @@ export function ProfileScreen() {
               />
               <Text style={styles.signOutText}>Sign Out</Text>
             </LinearGradient>
+          </TouchableOpacity>
+        )}
+
+        {/* ===== DELETE ACCOUNT BUTTON (Google Play requirement) ===== */}
+        {isAuthenticated && (
+          <TouchableOpacity
+            style={styles.deleteAccountBtn}
+            onPress={handleDeleteAccount}
+            activeOpacity={0.7}
+            accessibilityLabel="Delete Account"
+            accessibilityRole="button"
+            disabled={isDeleting}
+          >
+            {isDeleting ? (
+              <ActivityIndicator size="small" color={fnpColors.danger} />
+            ) : (
+              <Ionicons
+                name="trash-outline"
+                size={18}
+                color={fnpColors.danger}
+              />
+            )}
+            <Text style={styles.deleteAccountText}>
+              {isDeleting ? "Deleting Account..." : "Delete Account"}
+            </Text>
           </TouchableOpacity>
         )}
 
@@ -421,7 +509,7 @@ export function ProfileScreen() {
 
         {/* ===== VERSION INFO ===== */}
         <View style={styles.versionInfo}>
-          <Text style={styles.versionText}>Version 2.4.1</Text>
+          <Text style={styles.versionText}>Version 1.0.0</Text>
           <View style={styles.versionDot} />
           <Text style={styles.versionText}>Made with ❤️</Text>
         </View>
@@ -676,6 +764,27 @@ const styles = StyleSheet.create({
   },
   signOutText: {
     ...(typography?.body || { fontSize: 14 }),
+    color: fnpColors.danger,
+    fontWeight: "600",
+  },
+
+  // ===== DELETE ACCOUNT =====
+  deleteAccountBtn: {
+    marginHorizontal: spacing.screen || 16,
+    marginTop: spacing.sm || 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#FFCDD2",
+    backgroundColor: "#FFF5F5",
+  },
+  deleteAccountText: {
+    ...(typography?.bodySmall || { fontSize: 13 }),
     color: fnpColors.danger,
     fontWeight: "600",
   },

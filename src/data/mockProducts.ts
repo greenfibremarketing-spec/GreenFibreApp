@@ -1,3 +1,13 @@
+/**
+ * DEPRECATED: Mock Products Data
+ * 
+ * This file is retained solely for local offline fallback / UI testing.
+ * The production application fetches all catalog data dynamically from the live backend:
+ *   - productService.getProducts() -> /api/product/
+ *   - productService.getProductById() -> /api/product/:id
+ * 
+ * Do NOT import this file in production screens or release workflows.
+ */
 import { placeholders } from './images';
 
 export interface Product {

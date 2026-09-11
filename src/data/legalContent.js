@@ -1,6 +1,6 @@
 export const privacyPolicy = {
     title: 'Privacy Policy',
-    lastUpdated: 'January 1, 2025',
+    lastUpdated: 'March 1, 2026',
     intro: [
         'At Green Fibre, we are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy describes how we collect, use, disclose, and safeguard your information when you visit our website or make a purchase from us.',
         'By using our services, you agree to the collection and use of information in accordance with this policy. If you do not agree with our policies and practices, please do not use our services.',
@@ -65,8 +65,8 @@ export const privacyPolicy = {
                     content: 'You have the right to access, update, or correct your personal information at any time through your account settings or by contacting us.',
                 },
                 {
-                    title: 'Data Deletion',
-                    content: 'You may request deletion of your personal information, subject to certain legal obligations. We will respond to such requests within 30 days.',
+                    title: 'Data Deletion & Account Erasure',
+                    content: 'You have the right to request permanent deletion of your account and all associated personal information directly inside the app (Profile > Delete Account) or by contacting our Data Protection Officer at privacy@greenfibre.org. Upon confirmation, your account credentials, personal contact details, saved addresses, and wishlist are permanently deleted within 30 days, subject only to legally mandated financial record retention.',
                 },
                 {
                     title: 'Marketing Opt-Out',
@@ -83,7 +83,7 @@ export const privacyPolicy = {
 };
 export const termsAndConditions = {
     title: 'Terms & Conditions',
-    lastUpdated: 'January 1, 2025',
+    lastUpdated: 'March 1, 2026',
     intro: [
         'Welcome to Green Fibre. By accessing and using our website and services, you agree to be bound by these Terms and Conditions. Please read them carefully before making a purchase or creating an account.',
         'These terms govern your use of our platform, products, and services. If you do not agree with any part of these terms, you must not use our services.',
@@ -122,7 +122,7 @@ export const termsAndConditions = {
 };
 export const shippingPolicy = {
     title: 'Shipping Policy',
-    lastUpdated: 'January 1, 2025',
+    lastUpdated: 'March 1, 2026',
     intro: [
         'At Green Fibre, we are committed to delivering your eco-friendly products safely and sustainably. Our shipping policy is designed to be transparent, reliable, and environmentally responsible.',
         'We partner with trusted courier services to ensure timely delivery across India while maintaining our commitment to sustainability through eco-friendly packaging and carbon-neutral shipping practices.',
@@ -202,7 +202,7 @@ export const shippingPolicy = {
 };
 export const refundPolicy = {
     title: 'Refund Policy',
-    lastUpdated: 'January 1, 2025',
+    lastUpdated: 'March 1, 2026',
     intro: [
         'At Green Fibre, we want you to be completely satisfied with your purchase. If for any reason you are not happy with your order, we offer a straightforward return and refund process.',
         'This Refund Policy outlines the conditions, procedures, and timelines for returns and refunds. Please read this policy carefully before initiating a return.',

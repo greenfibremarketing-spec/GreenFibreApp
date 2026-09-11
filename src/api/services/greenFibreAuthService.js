@@ -98,6 +98,30 @@ export const greenFibreAuthService = {
         }
     },
 
+    async deleteAccount() {
+        try {
+            let response;
+            try {
+                response = await authApiClient.delete('/users/me');
+            } catch (err) {
+                if (err.response?.status === 404 || err.response?.status === 405) {
+                    response = await authApiClient.post('/users/delete-account');
+                } else {
+                    throw err;
+                }
+            }
+            return response?.data || { success: true };
+        } catch (error) {
+            if (error.response?.status === 401) {
+                return { success: true };
+            }
+            throw toAuthError(error, 'Unable to delete your account. Please try again or contact support.');
+        } finally {
+            await clearCookies();
+            resetCookieJarReady();
+        }
+    },
+
     async getProfile() {
         try {
             const response = await authApiClient.get('/users/me');
