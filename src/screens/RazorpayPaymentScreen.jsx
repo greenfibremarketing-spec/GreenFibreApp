@@ -1,7 +1,7 @@
 // src/screens/RazorpayPaymentScreen.jsx
 // Green Fibre — In-App Razorpay Payment Screen using WebView
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Platform,
+  BackHandler,
 } from 'react-native';
 import { CustomAlert } from '../components/common/CustomAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -47,13 +48,45 @@ export function RazorpayPaymentScreen({ navigation, route }) {
     themeColor: colors.primary || '#1C4A2A',
   });
 
-  const handleClose = () => {
-    navigation.replace('OrderConfirmation', {
-      orderId,
-      success: false,
-      message: 'Payment was cancelled. Your order has been saved in your Order History.',
-    });
+  const handleCancelPayment = () => {
+    if (verifying) return;
+
+    CustomAlert.alert(
+      "Cancel Payment?",
+      "If you go back now, this payment session will be cancelled and your transaction will not be completed. Are you sure you want to exit?",
+      [
+        {
+          text: "Continue Payment",
+          style: "cancel",
+        },
+        {
+          text: "Yes, Cancel Payment",
+          style: "destructive",
+          onPress: () => {
+            navigation.replace('OrderConfirmation', {
+              orderId,
+              success: false,
+              message: 'Payment was cancelled. Your order has been saved in your Order History.',
+            });
+          },
+        },
+      ]
+    );
   };
+
+  useEffect(() => {
+    const onBackPress = () => {
+      handleCancelPayment();
+      return true; // prevent automatic back navigation
+    };
+
+    const backSubscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      onBackPress
+    );
+
+    return () => backSubscription.remove();
+  }, [verifying, orderId]);
 
   const handleMessage = async (event) => {
     try {
@@ -162,7 +195,7 @@ export function RazorpayPaymentScreen({ navigation, route }) {
         </View>
         <TouchableOpacity
           style={styles.closeBtn}
-          onPress={handleClose}
+          onPress={handleCancelPayment}
           accessibilityLabel="Cancel payment"
         >
           <Ionicons name="close" size={22} color={colors.text || '#1A1A1A'} />

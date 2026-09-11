@@ -772,7 +772,7 @@ export function ProductDetailsScreen({ navigation, route }) {
                 end={{ x: 1, y: 1 }}
                 style={styles.buyBtnGradient}
               >
-                <Ionicons name="flash" size={15} color="#FFFFFF" />
+                <Ionicons name="bag-check-outline" size={16} color="#FFFFFF" />
                 <Text style={styles.buyBtnText}>Buy Now</Text>
               </LinearGradient>
             </TouchableOpacity>

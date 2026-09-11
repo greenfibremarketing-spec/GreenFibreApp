@@ -882,7 +882,7 @@ export function CheckoutScreen({ navigation, route }) {
                 {loading ? (
                   <View style={styles.btnContentRow}>
                     <ActivityIndicator size="small" color="#FFFFFF" />
-                    <Text style={styles.directPlaceBtnText}>Creating Order...</Text>
+                    <Text style={styles.directPlaceBtnText}>Connecting to Payment...</Text>
                   </View>
                 ) : isFormValid ? (
                   <View style={styles.btnContentRow}>
