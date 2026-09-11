@@ -198,7 +198,9 @@ export function CheckoutScreen({ navigation, route }) {
           });
         }
       } catch (err) {
-        console.log("PIN code lookup fallback:", err);
+        if (__DEV__) {
+          console.log("PIN code lookup fallback:", err);
+        }
         setPincodeStatus({
           verified: false,
           message: "Could not auto-verify PIN code. Please confirm City and State manually.",

@@ -118,7 +118,7 @@ export function EasebuzzPaymentScreen({ navigation, route }) {
         </View>
       ) : (
         <WebView
-          originWhitelist={['*']}
+          originWhitelist={['https://*', 'about:blank']}
           source={{ html, baseUrl: easebuzzUrl }}
           onNavigationStateChange={(event) => handleNavigation(event.url)}
           onShouldStartLoadWithRequest={(request) => {

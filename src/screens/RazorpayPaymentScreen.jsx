@@ -206,7 +206,7 @@ export function RazorpayPaymentScreen({ navigation, route }) {
       <View style={styles.webContainer}>
         <WebView
           ref={webViewRef}
-          originWhitelist={['*']}
+          originWhitelist={['https://*', 'about:blank']}
           source={{ html, baseUrl: 'https://greenfibre.org' }}
           onMessage={handleMessage}
           javaScriptEnabled={true}

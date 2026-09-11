@@ -12,7 +12,10 @@ import 'react-native-gesture-handler';
 const persistConfig = {
     key: 'root',
     storage: AsyncStorage,
-    whitelist: ['auth', 'ui'],
+    // auth is intentionally excluded: user PII (name, email, phone) must not be
+    // stored in unencrypted AsyncStorage. Session is restored via the SecureStore-backed
+    // cookie jar (expo-secure-store) → API call in restoreAuthSession thunk.
+    whitelist: ['ui'],
 };
 const rootReducer = combineReducers({
     auth: authReducer,

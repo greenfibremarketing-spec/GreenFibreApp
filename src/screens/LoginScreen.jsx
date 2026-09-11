@@ -46,7 +46,7 @@ export function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
@@ -323,33 +323,13 @@ export function LoginScreen({ navigation }) {
                 )}
               </View>
 
-              {/* Remember Me & Forgot Password */}
+              {/* Forgot Password */}
               <View style={styles.optionsRow}>
-                <TouchableOpacity
-                  style={styles.rememberMe}
-                  onPress={() => setRememberMe(!rememberMe)}
-                  activeOpacity={0.7}
-                >
-                  <View
-                    style={[
-                      styles.checkbox,
-                      rememberMe && styles.checkboxChecked,
-                    ]}
-                  >
-                    {rememberMe && (
-                      <Ionicons
-                        name="checkmark"
-                        size={14}
-                        color={fnpColors.white}
-                      />
-                    )}
-                  </View>
-                  <Text style={styles.rememberMeText}>Remember Me</Text>
-                </TouchableOpacity>
-
                 <TouchableOpacity
                   onPress={() => navigation.navigate("ForgotPassword")}
                   activeOpacity={0.7}
+                  accessibilityLabel="Forgot password"
+                  accessibilityRole="button"
                 >
                   <Text style={styles.forgotLink}>Forgot Password?</Text>
                 </TouchableOpacity>

@@ -76,7 +76,7 @@ export const razorpayService = {
         amount: data.amount,
         currency: data.currency || 'INR',
         receipt: data.receipt,
-        key_id: data.key_id || process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || '',
+        key_id: data.key_id || '',
         orderId: data.orderId || orderId || null,
       };
     } catch (error) {
