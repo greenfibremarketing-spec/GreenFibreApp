@@ -2,6 +2,7 @@
   "expo": {
     "name": "Green Fibre",
     "slug": "green-fibre-app",
+    "owner": "greenfibre",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -52,7 +53,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "2016ffdf-9680-4147-bc68-aaa065b67723"
+        "projectId": "212b0dd8-0219-4ae5-b00c-da538119e21f"
       }
     }
   }
